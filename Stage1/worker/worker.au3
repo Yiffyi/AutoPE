@@ -1,7 +1,6 @@
 #AutoIt3Wrapper_Run_Au3Stripper=Y
-#AutoIt3Wrapper_UseX64=Y
-#AutoIt3Wrapper_Change2CUI=Y
-#AutoIt3Wrapper_Run_Debug_Mode=Y
+#pragma compile(x64, true)
+#pragma compile(Console, true)
 #NoTrayIcon
 #RequireAdmin
 #include <AutoItConstants.au3>
@@ -25,7 +24,7 @@ ProcessInjectFiles()
 FixBoot()
 WriteBackConfig()
 
-MsgBox($MB_ICONINFORMATION, "[DP] Worker", "=== 工作结束 ===" & @CRLF & "10s 后重启...", 10)
+MsgBox($MB_ICONINFORMATION, "[AutoPE] Worker", "=== 工作结束 ===" & @CRLF & "10s 后重启...", 10)
 Shutdown($SD_REBOOT)
 
 Func StartNetwork()
@@ -124,7 +123,7 @@ EndFunc   ;==>WriteBackConfig
 
 Func D($msg, $pos, $arg = "")
 	ConsoleWrite('@@ ' & $pos & '(' & $arg & '): ' & $msg & @CRLF & '    > @error: ' & @error & @CRLF)
-EndFunc
+EndFunc   ;==>D
 
 Func TryRunWaitCatch($cmd, $expected_ret, $sErr)
 	D('Starting', 'RunWait', $cmd) ;### Debug Console

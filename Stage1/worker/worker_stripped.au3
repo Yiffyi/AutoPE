@@ -1,9 +1,10 @@
+#pragma compile(x64, true)
+#pragma compile(Console, true)
 #NoTrayIcon
 #RequireAdmin
 Global Const $SD_REBOOT = 2
 Global Const $MB_ICONERROR = 16
 Global Const $MB_ICONINFORMATION = 64
-Global Const $FC_OVERWRITE = 1
 Global Const $FO_APPEND = 1
 Global Const $FO_OVERWRITE = 2
 Global Const $FO_CREATEPATH = 8
@@ -22,7 +23,7 @@ $oEL.Text = $vCode
 Return $oEL.NodeTypedValue
 EndIf
 EndFunc
-Global $sIniConfig = "config\config.ini"
+Global $sIniConfig = "stage1\config.ini"
 FileInstall("aria2c.exe", "aria2c.exe")
 StartNetwork()
 SetupVolumes()
@@ -30,11 +31,11 @@ ApplyImage()
 ProcessInjectFiles()
 FixBoot()
 WriteBackConfig()
-MsgBox($MB_ICONINFORMATION, "[DP] Worker", "=== 工作结束 ===" & @CRLF & "10s 后重启...", 10)
+MsgBox($MB_ICONINFORMATION, "[AutoPE] Worker", "=== 工作结束 ===" & @CRLF & "10s 后重启...", 10)
 Shutdown($SD_REBOOT)
 Func StartNetwork()
-If FileExists("config\network.cmd") Then
-TryRunWaitCatch("config\network.cmd", 0, "ERR_NETWORK")
+If FileExists("stage1\network.cmd") Then
+TryRunWaitCatch("stage1\network.cmd", 0, "ERR_NETWORK")
 Else
 RunWait("wpeutil WaitForNetwork")
 EndIf
@@ -43,21 +44,21 @@ EndFunc
 Func SetupVolumes()
 Local $sUseDiskpart = IniRead($sIniConfig, "Volume", "UseDiskpart", "False")
 If $sUseDiskpart == "True" Then
-TryRunWaitCatch("diskpart /s config\diskpart.txt", 0, "ERR_DISKPART")
+TryRunWaitCatch("diskpart /s stage1\diskpart.txt", 0, "ERR_DISKPART")
 Else
-TryRunWaitCatch("config\volume.cmd", 0, "ERR_SETUP_VOLUME")
+TryRunWaitCatch("stage1\volume.cmd", 0, "ERR_SETUP_VOLUME")
 EndIf
 EndFunc
 Func ApplyImage()
-TryRunWaitCatch("aria2c -i config\systemAria2.txt -d J:\DPFiles --file-allocation=falloc", 0, "ERR_ARIA2_SYSIMG")
+TryRunWaitCatch("aria2c -i stage1\systemAria2.txt -d J:\AutoPE\stage2 -x 4 --file-allocation=falloc", 0, "ERR_ARIA2_SYSIMG")
 Local $sImgIndex = IniRead($sIniConfig, "SystemImg", "ImgIndex", "1")
-TryRunWaitCatch("dism /apply-image /imagefile:J:\DPFiles\System.esd" & " /index:" & $sImgIndex & " /applydir:I:\", 0, "ERR_DISM_APPLY")
+TryRunWaitCatch("dism /apply-image /imagefile:J:\AutoPE\stage2\System.esd" & " /index:" & $sImgIndex & " /applydir:I:\", 0, "ERR_DISM_APPLY")
 EndFunc
 Func FixBoot()
 TryRunWaitCatch("bcdboot I:\windows /l zh-cn", 0, "ERR_BCDBOOT")
 EndFunc
 Func ProcessInjectFiles()
-TryRunWaitCatch("aria2c -i config\injectAria2.txt -d I:\ --file-allocation=falloc", 0, "ERR_ARIA2_INJ")
+TryRunWaitCatch("aria2c -i stage1\injectAria2.txt -d I:\ --file-allocation=falloc", 0, "ERR_ARIA2_INJ")
 Local $sections = IniReadSectionNames($sIniConfig)
 For $i = 1 To $sections[0]
 If StringLeft($sections[$i], 4) = "Text" Then
@@ -79,7 +80,7 @@ EndIf
 Next
 EndFunc
 Func WriteBackConfig()
-DirCopy("X:\DPFiles\config", "J:\DPFiles\config", $FC_OVERWRITE)
+FileCopy("stage1\network.cmd", "J:\AutoPE\stage2\network.cmd")
 EndFunc
 Func D($msg, $pos, $arg = "")
 ConsoleWrite('@@ ' & $pos & '(' & $arg & '): ' & $msg & @CRLF & '    > @error: ' & @error & @CRLF)

@@ -1,0 +1,33 @@
+{
+  "Inject": {
+    "NormalFiles": [
+      {
+        "Url": "http://2.2.2.239:2021/setip_v3_Pack.7z",
+        "Path": "WindSys_Setup\\WTDR\\WTDR.Pack\\Pack\\setip_v3_Pack.7z"
+      },
+      {
+        "Url": "http://2.2.2.239:2021/huorong_v5.0.65.2_Pack.7z",
+        "Path": "WindSys_Setup\\WTDR\\WTDR.Pack\\Pack\\huorong_v5_Pack.7z"
+      }
+    ],
+    "TextFiles": [
+      {
+        "Content": "\r\n[Pack99]\r\nRun=1\r\nFirstDesktop=1\r\nPack_Name=setip_v3_Pack.7z\r\n[Pack106]\r\nRun=1\r\nFirstDesktop=1\r\nPack_Name=huorong_v5_Pack.7z",
+        "Path": "WindSys_Setup\\WTDR\\WTDR.Pack\\Pack_Config.ini",
+        "Append": true
+      }
+    ],
+    "SystemImgUrl": "https://sharepoint.windsys.dl.edgenode.top/skyline/22000.376_211229/Windsys_Win11_X64_Pro_Skyline_22000.376_211229.esd",
+    "SystemImgIndex": 2,
+    "CustomInput": null
+  },
+  "PE": {
+    "OsLoaderId": "{ffffffff-8d96-11de-8e71-fffffffffffe}",
+    "RamdiskId": "{ffffffff-8d96-11de-8e71-ffffffffffff}",
+    "Description": "[AutoPE 自动部署系统]",
+    "Display": false,
+    "WimUrl": "http://2.2.2.239:2021/boot.wim",
+    "SdiUrl": "http://2.2.2.239:2021/boot.sdi",
+    "WorkerUrl": "http://2.2.2.239:2021/worker.exe"
+  }
+}

@@ -9,34 +9,29 @@ namespace AutoPE.UI
 {
     public partial class NICControl : UserControl
     {
-        public NetworkAdapterConfiguration Nic;
+        public NetworkAdapterConfiguration Nic => (NetworkAdapterConfiguration)_nicSource.Current;
+        private BindingSource _nicSource = new BindingSource();
         public NICControl()
         {
             InitializeComponent();
 
-            cbAdapters.DisplayMember = "Key";
-            cbAdapters.ValueMember = "Value";
-
             updateDataSource();
-            updateAdapter();
+
+            cbAdapters.DisplayMember = "Caption";
+            cbAdapters.DataSource = _nicSource;
+
+            cbDHCP.DataBindings.Add("Checked", _nicSource, "DHCPEnabled");
+            lCurMAC.DataBindings.Add("Text", _nicSource, "MACAddress");
+            lCurIP.DataBindings.Add("Text", _nicSource, "FirstIPAddress", false, DataSourceUpdateMode.OnPropertyChanged, "无 IP");
+            lCurMask.DataBindings.Add("Text", _nicSource, "FirstSubnet", false, DataSourceUpdateMode.OnPropertyChanged, "无 子网掩码");
+            lCurGate.DataBindings.Add("Text", _nicSource, "FirstDefaultIPGateway", false, DataSourceUpdateMode.OnPropertyChanged, "无 默认网关");
         }
         private void updateDataSource()
         {
             var adapters = WMIObject
                 .FromWQL(@"SELECT * From Win32_NetworkAdapterConfiguration WHERE IPEnabled = True")
                 .Select(x => new NetworkAdapterConfiguration(x));
-            cbAdapters.DataSource = adapters.Select(nic => new KeyValuePair<string, NetworkAdapterConfiguration>((string)nic["Caption"], nic)).ToArray();
-        }
-
-        private void updateAdapter()
-        {
-            NetworkAdapterConfiguration a = (NetworkAdapterConfiguration)cbAdapters.SelectedValue;
-            Nic = a;
-            cbDHCP.Checked = (bool)a["DHCPEnabled"];
-            lCurMAC.Text = (string)a["MACAddress"];
-            lCurIP.Text = a.FirstIPAddress ?? "无 IP";
-            lCurMask.Text = a.FirstSubnet ?? "无 子网掩码";
-            lCurGate.Text = a.FirstDefaultIPGateway ?? "无 默认网关";
+            _nicSource.DataSource = adapters;
         }
 
         private void bLoad_Click(object sender, EventArgs e)
@@ -46,11 +41,6 @@ namespace AutoPE.UI
             c.EnableStatic(new string[] { lCurIP.Text }, new string[] { lCurMask.Text });
             c.SetGateways(new string[] { lCurGate.Text });
             updateDataSource();
-        }
-
-        private void cbAdapters_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            updateAdapter();
         }
     }
 }

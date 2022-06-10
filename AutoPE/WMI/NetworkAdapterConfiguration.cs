@@ -29,9 +29,12 @@ namespace AutoPE.WMI
    }
    return result;
 }*/
+        public string Caption => (string)RawObject["Caption"];
         public string FirstIPAddress => (RawObject["IPAddress"] as string[])?[0];
         public string FirstSubnet => (RawObject["IPSubnet"] as string[])?[0];
         public string FirstDefaultIPGateway => (RawObject["DefaultIPGateway"] as string[])?[0];
+        public bool DHCPEnabled => (bool)RawObject["DHCPEnabled"];
+        public string MACAddress => (string)RawObject["MACAddress"];
 
         public uint EnableDHCP() =>
             CallMethod<UInt32>("EnableDHCP");

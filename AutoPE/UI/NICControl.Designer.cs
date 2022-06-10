@@ -66,7 +66,6 @@
             this.cbAdapters.Name = "cbAdapters";
             this.cbAdapters.Size = new System.Drawing.Size(216, 20);
             this.cbAdapters.TabIndex = 7;
-            this.cbAdapters.SelectedIndexChanged += new System.EventHandler(this.cbAdapters_SelectedIndexChanged);
             // 
             // gbNetL
             // 

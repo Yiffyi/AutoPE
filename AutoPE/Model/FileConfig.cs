@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Text;
 
 namespace AutoPE.Model
@@ -58,13 +59,14 @@ namespace AutoPE.Model
             return b.ToString();
         }
 
-        public IniData CompileTextIni()
+        public IniData PrepareTextFiles(string folder, Encoding e)
         {
             IniData ini = new IniData();
             for (int i = 0; i < TextFiles.Count; i++)
             {
                 var f = TextFiles[i];
-                ini[$"Text{i}"]["Base64Content"] = Convert.ToBase64String(Encoding.Default.GetBytes(f.Content));
+                File.WriteAllText(Path.Combine(folder, $"{i}.txt"), f.Content, e);
+                ini[$"Text{i}"]["SrcPath"] = $"{i}.txt";
                 ini[$"Text{i}"]["DstPath"] = f.Path;
                 ini[$"Text{i}"]["Append"] = f.Append.ToString();
             }

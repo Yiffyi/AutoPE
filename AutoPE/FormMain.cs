@@ -68,7 +68,7 @@ namespace AutoPE
             File.WriteAllText($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1\\systemAria2.txt", cfg.CompileSysImgAria2Input());
             File.WriteAllText($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1\\injectAria2.txt", cfg.CompileInjectAria2Input());
             iniCfg.Merge(cfg.CompileSysImgIni());
-            iniCfg.Merge(cfg.CompileTextIni());
+            iniCfg.Merge(cfg.PrepareTextFiles($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1\\", Encoding.ASCII));
         }
 
         public void WriteBCD(VolumeConfig vol, PEConfig pe)

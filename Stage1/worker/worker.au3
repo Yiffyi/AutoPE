@@ -6,7 +6,6 @@
 #include <AutoItConstants.au3>
 #include <MsgBoxConstants.au3>
 #include <FileConstants.au3>
-#include "Base64.au3"
 
 #cs
 请将系统盘盘符设为 I
@@ -76,21 +75,25 @@ Func ProcessInjectFiles()
 		If StringLeft($sections[$i], 4) = "Text" Then
 			Local $cfg = IniReadSection($sIniConfig, $sections[$i])
 			Local $sDstPath = "I:\" & IniRead($sIniConfig, $sections[$i], "DstPath", "")
-			D('$sDstPath = ' & $sDstPath, 'Inject')
-			Local $dContent = base64(IniRead($sIniConfig, $sections[$i], "Base64Content", ""), False)
+			Local $sSrcPath = "stage1\" & IniRead($sIniConfig, $sections[$i], "SrcPath", "")
 			Local $sAppend = IniRead($sIniConfig, $sections[$i], "Append", "")
+
+			D('$sDstPath = ' & $sDstPath, 'Inject')
 			D('$sAppend = ' & $sAppend, 'Inject')
 
-			Local $fileMode = $FO_OVERWRITE
 			If $sAppend = "True" Then
-				$fileMode = $FO_APPEND
+				Local $hSrcFile = FileOpen($sSrcPath, $FO_BINARY)
+				If $hSrcFile = -1 Then Failed("ERR_SRCFILE_OPEN")
+
+				Local $hDstFile = FileOpen($sDstPath, $FO_BINARY + $FO_APPEND)
+				If $hDstFile = -1 Then Failed("ERR_DSTFILE_OPEN")
+
+				FileWrite($hDstFile, FileRead($hSrcFile))
+				FileClose($hDstFile)
+				FileClose($hSrcFile)
+			Else
+				FileCopy($sSrcPath, $sDstPath, $FC_OVERWRITE + $FC_CREATEPATH)
 			EndIf
-
-			Local $hDstFile = FileOpen($sDstPath, $fileMode + $FO_CREATEPATH)
-			If $hDstFile = -1 Then Failed("ERR_DSTFILE_OPEN")
-
-			FileWrite($hDstFile, $dContent)
-			FileClose($hDstFile)
 		EndIf
 	Next
 

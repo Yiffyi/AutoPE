@@ -21,18 +21,18 @@ namespace AutoPE
 
         private void FormMain_Load(object sender, EventArgs e)
         {
-            var fileConfig = JsonConvert.DeserializeObject<RootConfig>(File.ReadAllText("config.json"));
-            fileControl1.LoadConfig(fileConfig.Inject);
-            peControl1.LoadConfig(fileConfig.PE);
+            var rootConfig = JsonConvert.DeserializeObject<RootConfig>(File.ReadAllText("config.json"));
+            fileControl1.LoadConfig(rootConfig.Inject);
+            peControl1.LoadConfig(rootConfig.PE);
         }
         public void SaveConfig()
         {
-            var fileConfig = new RootConfig
+            var rootConfig = new RootConfig
             {
                 PE = peControl1.Config,
                 Inject = fileControl1.Config
             };
-            File.WriteAllText("config.json", JsonConvert.SerializeObject(fileConfig, Formatting.Indented));
+            File.WriteAllText("config.json", JsonConvert.SerializeObject(rootConfig, Formatting.Indented));
         }
         public void WriteVolumeCmd(VolumeConfig vol, PEConfig pe)
         {

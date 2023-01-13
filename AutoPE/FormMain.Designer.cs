@@ -29,13 +29,14 @@ namespace AutoPE
         /// </summary>
         private void InitializeComponent()
         {
-            AutoPE.Model.NICConfig nicConfig1 = new AutoPE.Model.NICConfig();
+            AutoPE.Model.NICConfig nicConfig2 = new AutoPE.Model.NICConfig();
             this.bGo = new System.Windows.Forms.Button();
             this.bSave = new System.Windows.Forms.Button();
             this.peControl1 = new AutoPE.UI.PEControl();
             this.fileControl1 = new AutoPE.UI.FileControl();
             this.volumeControl1 = new AutoPE.UI.VolumeControl();
             this.nicControl1 = new AutoPE.UI.NICControl();
+            this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // bGo
@@ -86,15 +87,24 @@ namespace AutoPE
             // 
             // nicControl1
             // 
-            nicConfig1.DNSServer1 = null;
-            nicConfig1.DNSServer2 = null;
-            nicConfig1.PreferredNICName = null;
-            this.nicControl1.Config = nicConfig1;
+            nicConfig2.DNSServer1 = null;
+            nicConfig2.DNSServer2 = null;
+            nicConfig2.PreferredNICName = null;
+            this.nicControl1.Config = nicConfig2;
             this.nicControl1.Location = new System.Drawing.Point(24, 80);
             this.nicControl1.Margin = new System.Windows.Forms.Padding(12);
             this.nicControl1.Name = "nicControl1";
             this.nicControl1.Size = new System.Drawing.Size(588, 587);
             this.nicControl1.TabIndex = 11;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(1224, 26);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(190, 24);
+            this.label1.TabIndex = 18;
+            this.label1.Text = "客户端 v2023 b1";
             // 
             // FormMain
             // 
@@ -102,6 +112,7 @@ namespace AutoPE
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(1742, 1036);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.bSave);
             this.Controls.Add(this.peControl1);
             this.Controls.Add(this.bGo);
@@ -110,9 +121,10 @@ namespace AutoPE
             this.Controls.Add(this.nicControl1);
             this.Margin = new System.Windows.Forms.Padding(6);
             this.Name = "FormMain";
-            this.Text = "FormMain";
+            this.Text = "春晖中学系统部署客户端";
             this.Load += new System.EventHandler(this.FormMain_Load);
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -123,5 +135,6 @@ namespace AutoPE
         private System.Windows.Forms.Button bGo;
         private UI.PEControl peControl1;
         private System.Windows.Forms.Button bSave;
+        private System.Windows.Forms.Label label1;
     }
 }

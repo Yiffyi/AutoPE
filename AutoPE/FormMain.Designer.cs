@@ -40,7 +40,7 @@ namespace AutoPE
             // bGo
             // 
             this.bGo.Location = new System.Drawing.Point(186, 15);
-            this.bGo.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.bGo.Margin = new System.Windows.Forms.Padding(6);
             this.bGo.Name = "bGo";
             this.bGo.Size = new System.Drawing.Size(150, 46);
             this.bGo.TabIndex = 15;
@@ -51,7 +51,7 @@ namespace AutoPE
             // bSave
             // 
             this.bSave.Location = new System.Drawing.Point(24, 15);
-            this.bSave.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.bSave.Margin = new System.Windows.Forms.Padding(6);
             this.bSave.Name = "bSave";
             this.bSave.Size = new System.Drawing.Size(150, 46);
             this.bSave.TabIndex = 17;
@@ -85,6 +85,7 @@ namespace AutoPE
             // 
             // nicControl1
             // 
+            this.nicControl1.Config = null;
             this.nicControl1.Location = new System.Drawing.Point(24, 80);
             this.nicControl1.Margin = new System.Windows.Forms.Padding(12);
             this.nicControl1.Name = "nicControl1";
@@ -95,14 +96,15 @@ namespace AutoPE
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 24F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1547, 1046);
+            this.AutoSize = true;
+            this.ClientSize = new System.Drawing.Size(1573, 1036);
             this.Controls.Add(this.bSave);
             this.Controls.Add(this.peControl1);
             this.Controls.Add(this.bGo);
             this.Controls.Add(this.fileControl1);
             this.Controls.Add(this.volumeControl1);
             this.Controls.Add(this.nicControl1);
-            this.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.Margin = new System.Windows.Forms.Padding(6);
             this.Name = "FormMain";
             this.Text = "FormMain";
             this.Load += new System.EventHandler(this.FormMain_Load);

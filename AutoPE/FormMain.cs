@@ -52,6 +52,7 @@ namespace AutoPE
         private void WriteNICCmd(VolumeConfig vol, PEConfig pe)
         {
             var nic = nicControl1.Nic;
+            var nicCfg = nicControl1.Config;
             if (!(bool)nic["DHCPEnabled"] && nic.FirstIPAddress != null && nic.FirstSubnet != null)
             {
                 var cmd = File.CreateText($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1\\network.cmd");
@@ -61,8 +62,12 @@ namespace AutoPE
                 if (nic.FirstDefaultIPGateway != null)
                     cmd.WriteLine($"wmic path Win32_NetworkAdapterConfiguration where MACAddress='{nic["MACAddress"]}' call SetGateways DefaultIPGateway={nic.FirstDefaultIPGateway}");
 
-                if (nic.DNSServer1 != null && nic.DNSServer1.Length > 0 && nic.DNSServer2 != null && nic.DNSServer2.Length > 0)
-                    cmd.WriteLine($"wmic path Win32_NetworkAdapterConfiguration where MACAddress='{nic["MACAddress"]}' call SetDNSServerSearchOrder DNSServerSearchOrder=({nic.DNSServer1}, {nic.DNSServer2})");
+                string ns1 = "", ns2 = "";
+                if (nic.DNSServer1 != null && nic.DNSServer1.Length > 0) ns1 = nic.DNSServer1;
+                if (nic.DNSServer2 != null && nic.DNSServer2.Length > 0) ns1 = nic.DNSServer1;
+                if (nicCfg.DNSServer1 != null && nicCfg.DNSServer1.Length > 0) ns1 = nicCfg.DNSServer1;
+                if (nicCfg.DNSServer2 != null && nicCfg.DNSServer2.Length > 0) ns2 = nicCfg.DNSServer2;
+                cmd.WriteLine($"wmic path Win32_NetworkAdapterConfiguration where MACAddress='{nic["MACAddress"]}' call SetDNSServerSearchOrder DNSServerSearchOrder=({ns1}, {ns2})");
                 cmd.Close();
             }
         }
@@ -133,7 +138,7 @@ namespace AutoPE
         {
             try
             {
-                Directory.Delete($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1", true);
+                Directory.Delete($"{vol.DataVol["DriveLetter"]}\\AutoPE\\", true);
             }
             catch (DirectoryNotFoundException) { }
 

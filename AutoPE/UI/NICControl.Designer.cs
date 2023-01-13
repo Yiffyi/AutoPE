@@ -38,8 +38,8 @@
             this.lCurIP = new System.Windows.Forms.Label();
             this.lCurMAC = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.tbDns1 = new System.Windows.Forms.TextBox();
             this.tbDns2 = new System.Windows.Forms.TextBox();
+            this.tbDns1 = new System.Windows.Forms.TextBox();
             this.bSetDns = new System.Windows.Forms.Button();
             this.gbNetL.SuspendLayout();
             this.groupBox1.SuspendLayout();
@@ -48,7 +48,7 @@
             // bLoad
             // 
             this.bLoad.Location = new System.Drawing.Point(404, 460);
-            this.bLoad.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.bLoad.Margin = new System.Windows.Forms.Padding(6);
             this.bLoad.Name = "bLoad";
             this.bLoad.Size = new System.Drawing.Size(150, 46);
             this.bLoad.TabIndex = 9;
@@ -70,7 +70,7 @@
             // 
             this.cbAdapters.FormattingEnabled = true;
             this.cbAdapters.Location = new System.Drawing.Point(126, 26);
-            this.cbAdapters.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.cbAdapters.Margin = new System.Windows.Forms.Padding(6);
             this.cbAdapters.Name = "cbAdapters";
             this.cbAdapters.Size = new System.Drawing.Size(428, 32);
             this.cbAdapters.TabIndex = 7;
@@ -83,9 +83,9 @@
             this.gbNetL.Controls.Add(this.lCurIP);
             this.gbNetL.Controls.Add(this.lCurMAC);
             this.gbNetL.Location = new System.Drawing.Point(36, 78);
-            this.gbNetL.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.gbNetL.Margin = new System.Windows.Forms.Padding(6);
             this.gbNetL.Name = "gbNetL";
-            this.gbNetL.Padding = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.gbNetL.Padding = new System.Windows.Forms.Padding(6);
             this.gbNetL.Size = new System.Drawing.Size(522, 350);
             this.gbNetL.TabIndex = 6;
             this.gbNetL.TabStop = false;
@@ -96,7 +96,7 @@
             this.cbDHCP.AutoCheck = false;
             this.cbDHCP.AutoSize = true;
             this.cbDHCP.Location = new System.Drawing.Point(50, 60);
-            this.cbDHCP.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.cbDHCP.Margin = new System.Windows.Forms.Padding(6);
             this.cbDHCP.Name = "cbDHCP";
             this.cbDHCP.Size = new System.Drawing.Size(198, 28);
             this.cbDHCP.TabIndex = 4;
@@ -158,19 +158,19 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "DNS 服务器";
             // 
-            // tbDns1
-            // 
-            this.tbDns1.Location = new System.Drawing.Point(6, 34);
-            this.tbDns1.Name = "tbDns1";
-            this.tbDns1.Size = new System.Drawing.Size(242, 35);
-            this.tbDns1.TabIndex = 0;
-            // 
             // tbDns2
             // 
             this.tbDns2.Location = new System.Drawing.Point(6, 75);
             this.tbDns2.Name = "tbDns2";
             this.tbDns2.Size = new System.Drawing.Size(242, 35);
             this.tbDns2.TabIndex = 1;
+            // 
+            // tbDns1
+            // 
+            this.tbDns1.Location = new System.Drawing.Point(6, 34);
+            this.tbDns1.Name = "tbDns1";
+            this.tbDns1.Size = new System.Drawing.Size(242, 35);
+            this.tbDns1.TabIndex = 0;
             // 
             // bSetDns
             // 
@@ -192,7 +192,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.cbAdapters);
             this.Controls.Add(this.gbNetL);
-            this.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.Margin = new System.Windows.Forms.Padding(6);
             this.Name = "NICControl";
             this.Size = new System.Drawing.Size(588, 593);
             this.gbNetL.ResumeLayout(false);

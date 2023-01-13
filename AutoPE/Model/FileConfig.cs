@@ -65,8 +65,8 @@ namespace AutoPE.Model
             for (int i = 0; i < TextFiles.Count; i++)
             {
                 var f = TextFiles[i];
-                File.WriteAllText(Path.Combine(folder, $"{i}.txt"), f.Content, e);
-                ini[$"Text{i}"]["SrcPath"] = $"{i}.txt";
+                File.WriteAllText(Path.Combine(folder, $"text{i}.txt"), f.Content, e);
+                ini[$"Text{i}"]["SrcPath"] = $"text{i}.txt";
                 ini[$"Text{i}"]["DstPath"] = f.Path;
                 ini[$"Text{i}"]["Append"] = f.Append.ToString();
             }

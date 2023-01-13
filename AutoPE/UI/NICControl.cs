@@ -1,10 +1,8 @@
 ﻿using AutoPE.Model;
 using AutoPE.WMI;
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Net;
 using System.Windows.Forms;
 
 namespace AutoPE.UI
@@ -14,15 +12,15 @@ namespace AutoPE.UI
         public NetworkAdapterConfiguration Nic => (NetworkAdapterConfiguration)_nicSource.Current;
         private BindingSource _nicSource = new BindingSource();
 
+        private NICConfig _config;
         public NICConfig Config
         {
-            get
+            get => _config;
+            set
             {
-                return new NICConfig
-                {
-                    DNSServer1 = tbDns1.Text == Nic.DNSServer1 ? null : tbDns1.Text,
-                    DNSServer2 = tbDns2.Text == Nic.DNSServer2 ? null : tbDns2.Text
-                };
+                _config = value;
+                tbDns1.DataBindings.Add("Text", Config, "DNSServer1", false, DataSourceUpdateMode.OnPropertyChanged, "");
+                tbDns2.DataBindings.Add("Text", Config, "DNSServer2", false, DataSourceUpdateMode.OnPropertyChanged, "");
             }
         }
         public NICControl()
@@ -39,14 +37,6 @@ namespace AutoPE.UI
             lCurIP.DataBindings.Add("Text", _nicSource, "FirstIPAddress", false, DataSourceUpdateMode.Never, "无 IP");
             lCurMask.DataBindings.Add("Text", _nicSource, "FirstSubnet", false, DataSourceUpdateMode.Never, "无 子网掩码");
             lCurGate.DataBindings.Add("Text", _nicSource, "FirstDefaultIPGateway", false, DataSourceUpdateMode.Never, "无 默认网关");
-            tbDns1.DataBindings.Add("Text", _nicSource, "DNSServer1", false, DataSourceUpdateMode.Never, "");
-            tbDns2.DataBindings.Add("Text", _nicSource, "DNSServer2", false, DataSourceUpdateMode.Never, "");
-        }
-
-        public void LoadConfig(NICConfig cfg)
-        {
-            if (cfg.DNSServer1 != null) { tbDns1.Text = cfg.DNSServer1; }
-            if (cfg.DNSServer2 != null) { tbDns2.Text = cfg.DNSServer2; }
         }
 
         private void updateDataSource()
@@ -63,6 +53,7 @@ namespace AutoPE.UI
 
             c.EnableStatic(new string[] { lCurIP.Text }, new string[] { lCurMask.Text });
             c.SetGateways(new string[] { lCurGate.Text });
+            c.SetDNSServerSearchOrder(new string[] { c.DNSServer1, c.DNSServer2 });
             updateDataSource();
         }
 

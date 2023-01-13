@@ -24,7 +24,7 @@ namespace AutoPE
             var rootConfig = JsonConvert.DeserializeObject<RootConfig>(File.ReadAllText("config.json"));
             fileControl1.LoadConfig(rootConfig.Inject);
             peControl1.LoadConfig(rootConfig.PE);
-            nicControl1.LoadConfig(rootConfig.NIC);
+            nicControl1.Config = rootConfig.NIC;
         }
         public void SaveConfig()
         {
@@ -41,12 +41,13 @@ namespace AutoPE
             if (!vol.UseDiskpart)
             {
                 File.WriteAllText($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1\\volume.cmd", vol.CompileVolumeCmd());
-            } else
+            }
+            else
             {
                 File.WriteAllText($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1\\diskpart.txt", vol.DiskpartScript);
                 iniCfg["Volume"]["UseDiskpart"] = "True";
             }
-            
+
         }
         private void WriteNICCmd(VolumeConfig vol, PEConfig pe)
         {
@@ -60,6 +61,8 @@ namespace AutoPE
                 if (nic.FirstDefaultIPGateway != null)
                     cmd.WriteLine($"wmic path Win32_NetworkAdapterConfiguration where MACAddress='{nic["MACAddress"]}' call SetGateways DefaultIPGateway={nic.FirstDefaultIPGateway}");
 
+                if (nic.DNSServer1 != null && nic.DNSServer1.Length > 0 && nic.DNSServer2 != null && nic.DNSServer2.Length > 0)
+                    cmd.WriteLine($"wmic path Win32_NetworkAdapterConfiguration where MACAddress='{nic["MACAddress"]}' call SetDNSServerSearchOrder DNSServerSearchOrder=({nic.DNSServer1}, {nic.DNSServer2})");
                 cmd.Close();
             }
         }

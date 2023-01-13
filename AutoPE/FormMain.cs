@@ -24,13 +24,15 @@ namespace AutoPE
             var rootConfig = JsonConvert.DeserializeObject<RootConfig>(File.ReadAllText("config.json"));
             fileControl1.LoadConfig(rootConfig.Inject);
             peControl1.LoadConfig(rootConfig.PE);
+            nicControl1.LoadConfig(rootConfig.NIC);
         }
         public void SaveConfig()
         {
             var rootConfig = new RootConfig
             {
                 PE = peControl1.Config,
-                Inject = fileControl1.Config
+                Inject = fileControl1.Config,
+                NIC = nicControl1.Config
             };
             File.WriteAllText("config.json", JsonConvert.SerializeObject(rootConfig, Formatting.Indented));
         }

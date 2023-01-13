@@ -36,6 +36,10 @@ namespace AutoPE.WMI
         public bool DHCPEnabled => (bool)RawObject["DHCPEnabled"];
         public string MACAddress => (string)RawObject["MACAddress"];
 
+        public string[] DNSServerSearchOrder => (string[])RawObject["DNSServerSearchOrder"];
+        public string DNSServer1 => DNSServerSearchOrder?[0];
+        public string DNSServer2 => DNSServerSearchOrder?[1];
+
         public uint EnableDHCP() =>
             CallMethod<UInt32>("EnableDHCP");
 
@@ -50,6 +54,12 @@ namespace AutoPE.WMI
             CallMethod<UInt32>("SetGateways", new
             {
                 DefaultIPGateway = gateway
+            });
+
+        public uint SetDNSServerSearchOrder(string[] dnsServer) =>
+            CallMethod<UInt32>("SetDNSServerSearchOrder", new
+            {
+                DNSServerSearchOrder = dnsServer
             });
     }
 }

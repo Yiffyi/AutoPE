@@ -75,6 +75,7 @@
       <DependentUpon>FormMain.cs</DependentUpon>
     </Compile>
     <Compile Include="Model\FileConfig.cs" />
+    <Compile Include="Model\NICConfig.cs" />
     <Compile Include="Model\PEConfig.cs" />
     <Compile Include="Model\RootConfig.cs" />
     <Compile Include="Model\VolumeConfig.cs" />

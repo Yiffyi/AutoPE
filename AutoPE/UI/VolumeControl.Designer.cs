@@ -43,26 +43,29 @@
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(13, 65);
+            this.label5.Location = new System.Drawing.Point(26, 130);
+            this.label5.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(41, 12);
+            this.label5.Size = new System.Drawing.Size(82, 24);
             this.label5.TabIndex = 20;
             this.label5.Text = "数据区";
             // 
             // cbDataVol
             // 
             this.cbDataVol.FormattingEnabled = true;
-            this.cbDataVol.Location = new System.Drawing.Point(60, 62);
+            this.cbDataVol.Location = new System.Drawing.Point(120, 124);
+            this.cbDataVol.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.cbDataVol.Name = "cbDataVol";
-            this.cbDataVol.Size = new System.Drawing.Size(162, 20);
+            this.cbDataVol.Size = new System.Drawing.Size(320, 32);
             this.cbDataVol.TabIndex = 19;
             // 
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(13, 39);
+            this.label4.Location = new System.Drawing.Point(26, 78);
+            this.label4.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(41, 12);
+            this.label4.Size = new System.Drawing.Size(82, 24);
             this.label4.TabIndex = 18;
             this.label4.Text = "引导区";
             this.label4.Visible = false;
@@ -70,27 +73,30 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(13, 13);
+            this.label2.Location = new System.Drawing.Point(26, 26);
+            this.label2.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(41, 12);
+            this.label2.Size = new System.Drawing.Size(82, 24);
             this.label2.TabIndex = 17;
             this.label2.Text = "系统区";
             // 
             // cbBootVol
             // 
             this.cbBootVol.FormattingEnabled = true;
-            this.cbBootVol.Location = new System.Drawing.Point(60, 36);
+            this.cbBootVol.Location = new System.Drawing.Point(120, 72);
+            this.cbBootVol.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.cbBootVol.Name = "cbBootVol";
-            this.cbBootVol.Size = new System.Drawing.Size(162, 20);
+            this.cbBootVol.Size = new System.Drawing.Size(320, 32);
             this.cbBootVol.TabIndex = 16;
             this.cbBootVol.Visible = false;
             // 
             // cbSysVol
             // 
             this.cbSysVol.FormattingEnabled = true;
-            this.cbSysVol.Location = new System.Drawing.Point(60, 10);
+            this.cbSysVol.Location = new System.Drawing.Point(120, 20);
+            this.cbSysVol.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.cbSysVol.Name = "cbSysVol";
-            this.cbSysVol.Size = new System.Drawing.Size(162, 20);
+            this.cbSysVol.Size = new System.Drawing.Size(320, 32);
             this.cbSysVol.TabIndex = 15;
             // 
             // cbFormatSys
@@ -99,9 +105,10 @@
             this.cbFormatSys.Checked = true;
             this.cbFormatSys.CheckState = System.Windows.Forms.CheckState.Checked;
             this.cbFormatSys.Enabled = false;
-            this.cbFormatSys.Location = new System.Drawing.Point(228, 13);
+            this.cbFormatSys.Location = new System.Drawing.Point(456, 26);
+            this.cbFormatSys.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.cbFormatSys.Name = "cbFormatSys";
-            this.cbFormatSys.Size = new System.Drawing.Size(60, 16);
+            this.cbFormatSys.Size = new System.Drawing.Size(114, 28);
             this.cbFormatSys.TabIndex = 21;
             this.cbFormatSys.Text = "格式化";
             this.cbFormatSys.UseVisualStyleBackColor = true;
@@ -109,9 +116,10 @@
             // cbFormatData
             // 
             this.cbFormatData.AutoSize = true;
-            this.cbFormatData.Location = new System.Drawing.Point(228, 65);
+            this.cbFormatData.Location = new System.Drawing.Point(456, 130);
+            this.cbFormatData.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.cbFormatData.Name = "cbFormatData";
-            this.cbFormatData.Size = new System.Drawing.Size(60, 16);
+            this.cbFormatData.Size = new System.Drawing.Size(114, 28);
             this.cbFormatData.TabIndex = 22;
             this.cbFormatData.Text = "格式化";
             this.cbFormatData.UseVisualStyleBackColor = true;
@@ -119,18 +127,20 @@
             // cbUseDiskpart
             // 
             this.cbUseDiskpart.AutoSize = true;
-            this.cbUseDiskpart.Location = new System.Drawing.Point(323, 12);
+            this.cbUseDiskpart.Location = new System.Drawing.Point(30, 189);
+            this.cbUseDiskpart.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.cbUseDiskpart.Name = "cbUseDiskpart";
-            this.cbUseDiskpart.Size = new System.Drawing.Size(156, 16);
+            this.cbUseDiskpart.Size = new System.Drawing.Size(306, 28);
             this.cbUseDiskpart.TabIndex = 23;
             this.cbUseDiskpart.Text = "使用 Diskpart 重新分区";
             this.cbUseDiskpart.UseVisualStyleBackColor = true;
             // 
             // bEditDiskpart
             // 
-            this.bEditDiskpart.Location = new System.Drawing.Point(323, 34);
+            this.bEditDiskpart.Location = new System.Drawing.Point(30, 233);
+            this.bEditDiskpart.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.bEditDiskpart.Name = "bEditDiskpart";
-            this.bEditDiskpart.Size = new System.Drawing.Size(146, 23);
+            this.bEditDiskpart.Size = new System.Drawing.Size(292, 46);
             this.bEditDiskpart.TabIndex = 24;
             this.bEditDiskpart.Text = "编辑 Diskpart 脚本";
             this.bEditDiskpart.UseVisualStyleBackColor = true;
@@ -138,7 +148,7 @@
             // 
             // VolumeControl
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 24F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.bEditDiskpart);
             this.Controls.Add(this.cbUseDiskpart);
@@ -150,8 +160,9 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.cbBootVol);
             this.Controls.Add(this.cbSysVol);
+            this.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.Name = "VolumeControl";
-            this.Size = new System.Drawing.Size(485, 108);
+            this.Size = new System.Drawing.Size(576, 297);
             this.Load += new System.EventHandler(this.VolumeControl_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

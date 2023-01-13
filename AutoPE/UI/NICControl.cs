@@ -18,9 +18,11 @@ namespace AutoPE.UI
             get => _config;
             set
             {
-                _config = value;
-                if (_config!= null)
+                if (value != null)
                 {
+                    _config = value;
+                    tbDns1.DataBindings.Clear();
+                    tbDns2.DataBindings.Clear();
                     tbDns1.DataBindings.Add("Text", _config, "DNSServer1", false, DataSourceUpdateMode.OnPropertyChanged, "");
                     tbDns2.DataBindings.Add("Text", _config, "DNSServer2", false, DataSourceUpdateMode.OnPropertyChanged, "");
                 }
@@ -29,6 +31,8 @@ namespace AutoPE.UI
         public NICControl()
         {
             InitializeComponent();
+
+            Config = new NICConfig();
 
             updateDataSource();
 

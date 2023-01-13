@@ -29,6 +29,7 @@ namespace AutoPE
         /// </summary>
         private void InitializeComponent()
         {
+            AutoPE.Model.NICConfig nicConfig1 = new AutoPE.Model.NICConfig();
             this.bGo = new System.Windows.Forms.Button();
             this.bSave = new System.Windows.Forms.Button();
             this.peControl1 = new AutoPE.UI.PEControl();
@@ -72,7 +73,7 @@ namespace AutoPE
             this.fileControl1.Location = new System.Drawing.Point(632, 320);
             this.fileControl1.Margin = new System.Windows.Forms.Padding(12);
             this.fileControl1.Name = "fileControl1";
-            this.fileControl1.Size = new System.Drawing.Size(894, 664);
+            this.fileControl1.Size = new System.Drawing.Size(1110, 664);
             this.fileControl1.TabIndex = 13;
             // 
             // volumeControl1
@@ -85,7 +86,10 @@ namespace AutoPE
             // 
             // nicControl1
             // 
-            this.nicControl1.Config = null;
+            nicConfig1.DNSServer1 = null;
+            nicConfig1.DNSServer2 = null;
+            nicConfig1.PreferredNICName = null;
+            this.nicControl1.Config = nicConfig1;
             this.nicControl1.Location = new System.Drawing.Point(24, 80);
             this.nicControl1.Margin = new System.Windows.Forms.Padding(12);
             this.nicControl1.Name = "nicControl1";
@@ -97,7 +101,7 @@ namespace AutoPE
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 24F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(1573, 1036);
+            this.ClientSize = new System.Drawing.Size(1742, 1036);
             this.Controls.Add(this.bSave);
             this.Controls.Add(this.peControl1);
             this.Controls.Add(this.bGo);

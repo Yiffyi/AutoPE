@@ -60,7 +60,7 @@ namespace AutoPE.UI
 
             c.EnableStatic(new string[] { lCurIP.Text }, new string[] { lCurMask.Text });
             c.SetGateways(new string[] { lCurGate.Text });
-            c.SetDNSServerSearchOrder(new string[] { c.DNSServer1, c.DNSServer2 });
+            c.SetDNSServerSearchOrder(c.DNSServerSearchOrder);
             updateDataSource();
         }
 

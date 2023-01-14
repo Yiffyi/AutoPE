@@ -63,8 +63,8 @@ namespace AutoPE
                     cmd.WriteLine($"wmic path Win32_NetworkAdapterConfiguration where MACAddress='{nic["MACAddress"]}' call SetGateways DefaultIPGateway={nic.FirstDefaultIPGateway}");
 
                 string ns1 = "", ns2 = "";
-                if (nic.DNSServer1 != null && nic.DNSServer1.Length > 0) ns1 = nic.DNSServer1;
-                if (nic.DNSServer2 != null && nic.DNSServer2.Length > 0) ns1 = nic.DNSServer1;
+                if (nic.DNSServerSearchOrder.Length >= 1) ns1 = nic.DNSServerSearchOrder[0];
+                if (nic.DNSServerSearchOrder.Length >= 2) ns2 = nic.DNSServerSearchOrder[1];
                 if (nicCfg.DNSServer1 != null && nicCfg.DNSServer1.Length > 0) ns1 = nicCfg.DNSServer1;
                 if (nicCfg.DNSServer2 != null && nicCfg.DNSServer2.Length > 0) ns2 = nicCfg.DNSServer2;
                 cmd.WriteLine($"wmic path Win32_NetworkAdapterConfiguration where MACAddress='{nic["MACAddress"]}' call SetDNSServerSearchOrder DNSServerSearchOrder=({ns1}, {ns2})");

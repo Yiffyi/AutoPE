@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Management;
 
 namespace AutoPE.WMI
@@ -37,8 +38,6 @@ namespace AutoPE.WMI
         public string MACAddress => (string)RawObject["MACAddress"];
 
         public string[] DNSServerSearchOrder => (string[])RawObject["DNSServerSearchOrder"];
-        public string DNSServer1 => DNSServerSearchOrder?[0];
-        public string DNSServer2 => DNSServerSearchOrder?[1];
 
         public uint EnableDHCP() =>
             CallMethod<UInt32>("EnableDHCP");

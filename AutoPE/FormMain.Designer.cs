@@ -104,7 +104,7 @@ namespace AutoPE
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(190, 24);
             this.label1.TabIndex = 18;
-            this.label1.Text = "客户端 v2023 b2";
+            this.label1.Text = "客户端 v2023 b3";
             // 
             // FormMain
             // 

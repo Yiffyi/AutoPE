@@ -5,6 +5,7 @@ namespace AutoPE
 {
     static class Program
     {
+        public static int BUILD = 4;
         /// <summary>
         /// 应用程序的主入口点。
         /// </summary>

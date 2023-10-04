@@ -10,11 +10,22 @@ Global Const $FC_CREATEPATH = 8
 Global Const $FO_APPEND = 1
 Global Const $FO_BINARY = 16
 Global $sIniConfig = "stage1\config.ini"
+Global $sUseDiskpart = IniRead($sIniConfig, "Volume", "UseDiskpart", "False")
+Global $sConfigVersion = IniRead($sIniConfig, "General", "Version", "0")
+If $sConfigVersion <> "4" Then
+Failed("ERR_CONFIG_VERSION")
+EndIf
 FileInstall("aria2c.exe", "aria2c.exe")
 StartNetwork()
-SetupVolumes()
+If $sUseDiskpart = "True" Then
+TryRunWaitCatch("diskpart /s stage1\diskpart.txt", 0, "ERR_DISKPART")
+EndIf
 ApplyImage()
 ProcessInjectFiles()
+If $sUseDiskpart <> "True" Then
+If IniRead($sIniConfig, "Volume", "FormatData", "False") = "True" Then TryRunWaitCatch("wmic path Win32_Volume where Label='[DP] Data' call Format FileSystem=NTFS QuickFormat=true Label='[DP] Data'", 0, "ERR_FORMAT_DATA")
+TryRunWaitCatch("wmic path Win32_Volume where Label='[DP] Data' set DriveLetter=J:", 0, "ERR_ASSIGN_DATA")
+EndIf
 FixBoot()
 WriteBackConfig()
 MsgBox($MB_ICONINFORMATION, "[AutoPE] Worker", "=== 工作结束 ===" & @CRLF & "10s 后重启...", 10)
@@ -23,20 +34,24 @@ Func StartNetwork()
 If FileExists("stage1\network.cmd") Then
 TryRunWaitCatch("stage1\network.cmd", 0, "ERR_NETWORK")
 Else
-RunWait("wpeutil WaitForNetwork")
+Local $nRet = -1
+For $i = 1 To 10
+$nRet = RunWait("wpeutil WaitForNetwork")
+If $nRet = 0 Then ExitLoop
+Sleep(500 * $i)
+Next
+If $nRet <> 0 Then
+Failed("ERR_WAITFORNETWORK_RETRY")
+EndIf
 EndIf
 RunWait("wpeutil DisableFirewall")
 EndFunc
-Func SetupVolumes()
-Local $sUseDiskpart = IniRead($sIniConfig, "Volume", "UseDiskpart", "False")
-If $sUseDiskpart == "True" Then
-TryRunWaitCatch("diskpart /s stage1\diskpart.txt", 0, "ERR_DISKPART")
-Else
-TryRunWaitCatch("stage1\volume.cmd", 0, "ERR_SETUP_VOLUME")
-EndIf
-EndFunc
 Func ApplyImage()
 TryRunWaitCatch("aria2c -i stage1\systemAria2.txt -d J:\AutoPE\stage2 -x 4 --file-allocation=falloc", 0, "ERR_ARIA2_SYSIMG")
+If $sUseDiskpart <> "True" Then
+TryRunWaitCatch("wmic path Win32_Volume where Label='[DP] System' call Format FileSystem=NTFS QuickFormat=true Label='[DP] System'", 0, "ERR_FORMAT_SYS")
+TryRunWaitCatch("wmic path Win32_Volume where Label='[DP] System' set DriveLetter=I:", 0, "ERR_ASSIGN_SYS")
+EndIf
 Local $sImgIndex = IniRead($sIniConfig, "SystemImg", "ImgIndex", "1")
 TryRunWaitCatch("dism /apply-image /imagefile:J:\AutoPE\stage2\System.esd" & " /index:" & $sImgIndex & " /applydir:I:\", 0, "ERR_DISM_APPLY")
 EndFunc
@@ -81,6 +96,6 @@ D('Finished, $ret = ' & $ret, 'RunWait', $cmd)
 If $ret <> $expected_ret Then Failed($sErr & "_" & $ret)
 EndFunc
 Func Failed($where)
-MsgBox($MB_ICONERROR, "[DP] Worker", "部署系统遇到了错误" & @CRLF & "CODE: " & $where)
+MsgBox($MB_ICONERROR, "[DP] Worker", "部署系统遇到了错误" & @CRLF & "CODE: " & $where & @CRLF & "如需排查故障，请勿重启并联系技术支持。")
 Exit 1
 EndFunc

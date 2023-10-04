@@ -21,6 +21,7 @@ namespace AutoPE
 
         private void FormMain_Load(object sender, EventArgs e)
         {
+            lVersion.Text += Program.BUILD;
             var rootConfig = JsonConvert.DeserializeObject<RootConfig>(File.ReadAllText("config.json"));
             fileControl1.LoadConfig(rootConfig.Inject);
             peControl1.LoadConfig(rootConfig.PE);
@@ -38,16 +39,16 @@ namespace AutoPE
         }
         public void WriteVolumeCmd(VolumeConfig vol, PEConfig pe)
         {
-            if (!vol.UseDiskpart)
+            if (vol.UseDiskpart)
             {
-                File.WriteAllText($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1\\volume.cmd", vol.CompileVolumeCmd());
-            }
-            else
-            {
+                //File.WriteAllText($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1\\volume.cmd", vol.CompileVolumeCmd());
                 File.WriteAllText($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1\\diskpart.txt", vol.DiskpartScript);
                 iniCfg["Volume"]["UseDiskpart"] = "True";
             }
-
+            else
+            {
+                if (vol.FormatData) iniCfg["Volume"]["FormatData"] = "True";
+            }
         }
         private void WriteNICCmd(VolumeConfig vol, PEConfig pe)
         {
@@ -80,6 +81,7 @@ namespace AutoPE
             var cfg = fileControl1.Config;
             File.WriteAllText($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1\\systemAria2.txt", cfg.CompileSysImgAria2Input());
             File.WriteAllText($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1\\injectAria2.txt", cfg.CompileInjectAria2Input());
+            iniCfg["General"]["Version"] = Program.BUILD.ToString();
             iniCfg.Merge(cfg.CompileSysImgIni());
             iniCfg.Merge(cfg.PrepareTextFiles($"{vol.DataVol["DriveLetter"]}\\AutoPE\\stage1\\", Encoding.ASCII));
         }

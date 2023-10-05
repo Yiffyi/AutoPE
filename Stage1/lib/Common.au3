@@ -9,6 +9,7 @@ RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinPE",
 If @error Then $bIsPE = False
 
 Global $g_hLogFile, $g_sLogPath, $g_nLogLevel
+Global Const $g_ProgramName = _WinAPI_PathRemoveExtension(@ScriptName)
 
 Func InitLog($sLevel, $sFileName = "")
 	If $sFileName = "" Then
@@ -30,7 +31,7 @@ Func InitLog($sLevel, $sFileName = "")
 	$g_hLogFile = FileOpen($sFileName, BitOR($FO_APPEND, $FO_CREATEPATH))
 	OnAutoItExitRegister("_closeLog")
 	_writeLog("[D]", "> Logger started <" & @CRLF & _DebugBugReportEnv())
-	LogW("====== " & _WinAPI_PathRemoveExtension(@ScriptName) & "，启动！ ======")
+	LogW("====== " & $g_ProgramName & "，启动！ ======")
 EndFunc
 
 Func _writeLog($sLevel, $sMsg)
@@ -72,16 +73,16 @@ EndFunc
 
 Func Err($e)
 	LogW($e)
-	MsgBox($MB_ICONWARNING, "[AutoPE]", $e)
+	MsgBox($MB_ICONWARNING, "[AutoPE] " & $g_ProgramName, $e)
 EndFunc
 
 
 Func Failed($e)
 	LogE($e)
 	_closeLog()
-	MsgBox($MB_ICONERROR, "[AutoPE]", $e)
-	If MsgBox(BitOR($MB_ICONERROR, $MB_YESNO), "[AutoPE]", "是否将日志文件保存到U盘？") = $IDYES Then
-		SplashTextOn("[AutoPE]", "等待U盘插入……")
+	MsgBox($MB_ICONERROR, "[AutoPE] " & $g_ProgramName, $e)
+	If MsgBox(BitOR($MB_ICONERROR, $MB_YESNO), "[AutoPE] " & $g_ProgramName, "是否将日志文件保存到U盘？") = $IDYES Then
+		SplashTextOn("[AutoPE] " & $g_ProgramName, "等待U盘插入……")
 		Local $aArray = DriveGetDrive($DT_REMOVABLE), $cnt = 1
 		While $aArray[0] < 1 And $cnt <= 30
 			Sleep(1000)
@@ -93,7 +94,7 @@ Func Failed($e)
 				DirCopy(@ScriptDir & "\logs", $aArray[$i] & "\autope_failed_logs", $FC_OVERWRITE)
 			Next
 		Else
-			SplashTextOn("[AutoPE]", "三十秒内未检测到U盘，停止等待")
+			SplashTextOn("[AutoPE] " & $g_ProgramName, "三十秒内未检测到U盘，停止等待")
 		EndIf
 	EndIf
 	Exit 1

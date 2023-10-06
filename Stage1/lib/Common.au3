@@ -1,4 +1,5 @@
 #include-once
+#include <InetConstants.au3>
 #include <FileConstants.au3>
 #include <Debug.au3>
 #include <File.au3>
@@ -9,7 +10,7 @@ RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinPE",
 If @error Then $bIsPE = False
 
 Global $g_hLogFile, $g_sLogPath, $g_nLogLevel
-Global Const $g_ProgramName = _WinAPI_PathRemoveExtension(@ScriptName)
+Global Const $g_ProgramName = _WinAPI_PathRemoveExtension(@ScriptName), $g_ProgramTitle = "[AutoPE] " & $g_ProgramName
 
 Func InitLog($sLevel, $sFileName = "")
 	If $sFileName = "" Then
@@ -73,16 +74,16 @@ EndFunc
 
 Func Err($e)
 	LogW($e)
-	MsgBox($MB_ICONWARNING, "[AutoPE] " & $g_ProgramName, $e)
+	MsgBox($MB_ICONWARNING, $g_ProgramTitle, $e)
 EndFunc
 
 
 Func Failed($e)
 	LogE($e)
 	_closeLog()
-	MsgBox($MB_ICONERROR, "[AutoPE] " & $g_ProgramName, $e)
-	If MsgBox(BitOR($MB_ICONERROR, $MB_YESNO), "[AutoPE] " & $g_ProgramName, "是否将日志文件保存到U盘？") = $IDYES Then
-		SplashTextOn("[AutoPE] " & $g_ProgramName, "等待U盘插入……")
+	MsgBox($MB_ICONERROR, $g_ProgramTitle, $e)
+	If MsgBox(BitOR($MB_ICONERROR, $MB_YESNO), $g_ProgramTitle, "是否将日志文件保存到U盘？") = $IDYES Then
+		SplashTextOn($g_ProgramTitle, "等待U盘插入……")
 		Local $aArray = DriveGetDrive($DT_REMOVABLE), $cnt = 1
 		While $aArray[0] < 1 And $cnt <= 30
 			Sleep(1000)
@@ -94,7 +95,7 @@ Func Failed($e)
 				DirCopy(@ScriptDir & "\logs", $aArray[$i] & "\autope_failed_logs", $FC_OVERWRITE)
 			Next
 		Else
-			SplashTextOn("[AutoPE] " & $g_ProgramName, "三十秒内未检测到U盘，停止等待")
+			SplashTextOn($g_ProgramTitle, "三十秒内未检测到U盘，停止等待")
 		EndIf
 	EndIf
 	Exit 1
@@ -138,10 +139,45 @@ Func No($s)
 EndFunc
 
 
-Func DownloadOrCopyFile($sSrc, $sDst)
-	If StringLeft($sSrc, 4) = "http" Then
-		RunWaitCatch('tmp\aria2c -o "' & $sDst & '" ' & $sSrc, 0, "ERR_ARIA2_DL: " & $sSrc)
+Func Lookfor($sPath)
+	If StringLen($sSrc) = 0 Then Return ""
+
+	If FileExists($sPath) Then
+		Return $sPath
 	Else
-		FileCopy($sSrc, $sDst)
+		LogW($sPath & " 没有在工作目录中找到 " & @WorkingDir)
+		Local $a = DriveGetDrive($DT_ALL)
+		For $i = 1 To $a[0]
+			If FileExists($a[$i] & '\' & $sPath) Then
+				LogI($sPath & " 找到了 " & $a[$i])
+				Return $a[$i] & '\' & $sPath
+			EndIf
+		Next
+		Err("没有找到 " & $sPath)
+		Return ""
+	EndIf
+EndFunc
+
+
+Func DownloadOrCopyFile($sSrc, $sDst)
+	Local $sSchema = StringLeft($sSrc, 4)
+	If $sSchema = "http" Or $sSchema = "ftp:" Then
+		Local $hDownload = InetGet($sSrc, $sDst , $INET_FORCERELOAD + $INET_BINARYTRANSFER + $INET_FORCEBYPASS, $INET_DOWNLOADWAIT)
+		Local $e = InetGetInfo($hDownload, $INET_DOWNLOADERROR)
+		If $e Or @error Then
+			Err("下载 " & $sSrc & " 时出错: " & $e & @error)
+			FileDelete($sDst)
+			Return False
+		EndIf
+
+		LogI($sSrc & " 已下载")
+		Return True
+	Else
+		Local $s = Lookfor($sSrc)
+		If StringLen($s) > 0 Then
+			Return FileCopy($s, $sDst)
+		Else
+			Return False
+		EndIf
 	EndIf
 EndFunc

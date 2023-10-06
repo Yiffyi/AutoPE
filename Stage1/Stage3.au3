@@ -5,7 +5,7 @@
 ;#AutoIt3Wrapper_UseUpx=Y
 #AutoIt3Wrapper_Res_CompanyName=Yiffyi
 #AutoIt3Wrapper_Res_Fileversion_Use_Template=%YYYY.%MO.%DD
-#AutoIt3Wrapper_Res_Fileversion=2023.10.5.0
+#AutoIt3Wrapper_Res_Fileversion=2023.10.6.0
 #AutoIt3Wrapper_Res_HiDpi=Y
 #AutoIt3Wrapper_Res_ProductName=AutoPE
 #AutoIt3Wrapper_Res_ProductVersion=v2023b2
@@ -57,7 +57,7 @@ Func _apply($sList)
 				Case ".7z"
 					Apply7zPack("tmp\packs\" & $sPackPath, "tmp\7za.exe", "tmp\workdir")
 				Case ".iso"
-					ApplyISOPack("tmp\packs\" & $sPackPath)
+					ApplyISOPack("tmp\packs\" & $sPackPath, "tmp\WinCDEmu.exe")
 				Case Else
 					LogE($sPackPath & " 包文件拓展名不正确")
 			EndSwitch
@@ -76,10 +76,11 @@ EndFunc
 Switch StringLower($CmdLine[1])
 	Case "prewindeploy"
 		SetWinSplashText("[AutoPE] PreWindeploy")
-		_apply("tmp\preWindeployPacks")
+		;_apply("tmp\preWindeployPacks")
 	Case "postwindeploy"
 		SetWinSplashText("[AutoPE] PostWindeploy")
-		_apply("tmp\postWinDeployPacks")
+		;_apply("tmp\postWinDeployPacks")
+	#cs
 	Case "preoobe"
 		SetWinSplashText("[AutoPE] PreOOBE")
 		LoadNetCfgFromIni(@ScriptDir & "\NetworkCfg.ini")
@@ -90,6 +91,13 @@ Switch StringLower($CmdLine[1])
 		SetWinSplashText("[AutoPE] PostOOBE")
 		_apply("tmp\postOobePacks")
 		SetWinSplashText("[AutoPE] PostOOBE done.")
+	#ce
+	Case "specialize"
+		SetWinSplashText("[AutoPE] Specialize")
+		LoadNetCfgFromIni(@ScriptDir & "\NetworkCfg.ini")
+		LoadUNCIni($sIniConfig)
+		_apply("tmp\specializePacks")
+		SetWinSplashText("[AutoPE] Specialize done.")
 	Case "audit"
 		_apply("tmp\auditPacks")
 	Case "firstlogon"

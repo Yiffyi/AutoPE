@@ -558,8 +558,8 @@ LogE($sPackPath & " failed")
 EndIf
 Return DirRemove($sTmp, 1)
 EndFunc
-Func ApplyISOPack($sPackPath)
-Local $ret = RunWait(StringFormat('tmp\WinCDEmu "%s" /wait', $sPackPath))
+Func ApplyISOPack($sPackPath, $sWinCDEmu)
+Local $ret = RunWait(StringFormat('%s "%s" /wait', $sWinCDEmu, $sPackPath))
 If $ret <> 0 Then
 Err("Could not mount " & $sPackPath & ": " & $ret)
 Return False
@@ -579,7 +579,7 @@ EndIf
 Else
 Err($sPackPath & " pack entry not found")
 EndIf
-$ret = RunWait('tmp\WinCDEmu /unmount "' & $sPackPath & '"')
+$ret = RunWait(StringFormat('%s /unmount "%s"', $sWinCDEmu, $sPackPath))
 If $ret <> 0 Then
 Err("Could not detach " & $sPackPath & ": " & $ret)
 Return False
@@ -616,7 +616,7 @@ Switch StringLower(_WinAPI_PathFindExtension($sPackPath))
 Case ".7z"
 Apply7zPack("tmp\packs\" & $sPackPath, "tmp\7za.exe", "tmp\workdir")
 Case ".iso"
-ApplyISOPack("tmp\packs\" & $sPackPath)
+ApplyISOPack("tmp\packs\" & $sPackPath, "tmp\WinCDEmu.exe")
 Case Else
 LogE($sPackPath & " 包文件拓展名不正确")
 EndSwitch

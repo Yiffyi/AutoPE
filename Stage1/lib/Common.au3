@@ -140,7 +140,7 @@ EndFunc
 
 
 Func Lookfor($sPath)
-	If StringLen($sSrc) = 0 Then Return ""
+	If StringLen($sPath) = 0 Then Return ""
 
 	If FileExists($sPath) Then
 		Return $sPath

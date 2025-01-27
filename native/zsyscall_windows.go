@@ -47,6 +47,9 @@ var (
 	procWIMGetImageCount           = modwimgapi.NewProc("WIMGetImageCount")
 	procWIMGetImageInformation     = modwimgapi.NewProc("WIMGetImageInformation")
 	procWIMGetMessagecallbackCount = modwimgapi.NewProc("WIMGetMessagecallbackCount")
+	procWIMLoadImage               = modwimgapi.NewProc("WIMLoadImage")
+	procWIMRegisterMessageCallback = modwimgapi.NewProc("WIMRegisterMessageCallback")
+	procWIMSetTemporaryPath        = modwimgapi.NewProc("WIMSetTemporaryPath")
 )
 
 func WIMApplyImage(hImage syscall.Handle, pszPath *uint16, dwApplyFlags uint32) (err error) {
@@ -103,6 +106,32 @@ func WIMGetMessagecallbackCount(hWim syscall.Handle) (n uint32, err error) {
 	r0, _, e1 := syscall.Syscall(procWIMGetMessagecallbackCount.Addr(), 1, uintptr(hWim), 0, 0)
 	n = uint32(r0)
 	if n == 0 {
+		err = errnoErr(e1)
+	}
+	return
+}
+
+func WIMLoadImage(hWim syscall.Handle, dwImageIndex uint32) (hImage syscall.Handle, err error) {
+	r0, _, e1 := syscall.Syscall(procWIMLoadImage.Addr(), 2, uintptr(hWim), uintptr(dwImageIndex), 0)
+	hImage = syscall.Handle(r0)
+	if hImage == 0 {
+		err = errnoErr(e1)
+	}
+	return
+}
+
+func WIMRegisterMessageCallback(hWim syscall.Handle, fpMessageProc uintptr, pvUserData uintptr) (idx uint32, err error) {
+	r0, _, e1 := syscall.Syscall(procWIMRegisterMessageCallback.Addr(), 3, uintptr(hWim), uintptr(fpMessageProc), uintptr(pvUserData))
+	idx = uint32(r0)
+	if idx == INVALID_CALLBACK_VALUE {
+		err = errnoErr(e1)
+	}
+	return
+}
+
+func WIMSetTemporaryPath(hWim syscall.Handle, pszPath *uint16) (err error) {
+	r1, _, e1 := syscall.Syscall(procWIMSetTemporaryPath.Addr(), 2, uintptr(hWim), uintptr(unsafe.Pointer(pszPath)), 0)
+	if r1 == 0 {
 		err = errnoErr(e1)
 	}
 	return

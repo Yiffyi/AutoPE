@@ -2,11 +2,7 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"runtime"
-	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -14,51 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/yiffyi/autope"
-	"github.com/yiffyi/autope/native"
-	"golang.org/x/sys/windows"
 )
-
-func wimMessageProc(dwMessageId native.WimMessageId, wParam uintptr, lParam uintptr, pvUserData uintptr) uintptr {
-	fmt.Println("Received WIM Message:", dwMessageId)
-	switch dwMessageId {
-	case native.WIM_MSG_PROCESS:
-		pszFullPath := native.UTF16PtrToString((*uint16)(unsafe.Pointer(wParam)))
-		var pfProcessFile *bool = (*bool)(unsafe.Pointer(lParam))
-		*pfProcessFile = true
-		fmt.Println(pszFullPath)
-	}
-	return native.WIM_MSG_SUCCESS
-}
-
-func p1() {
-	runtime.LockOSThread()
-	wimPath, err := syscall.UTF16PtrFromString("D:\\sources\\install.wim")
-	fmt.Println(err)
-	hWim, err := native.WIMCreateFile(wimPath, windows.GENERIC_READ, windows.OPEN_EXISTING, native.WIM_UNDOCUMENTED_BULLSHIT|native.WIM_FLAG_VERIFY, native.WIM_COMPRESS_NONE, nil)
-	fmt.Println(hWim, err)
-
-	wimInfo, err := native.WIMGetAttributes(hWim)
-	fmt.Println("wimInfo:", wimInfo, err)
-	idx, err := native.WIMRegisterMessageCallback(hWim, syscall.NewCallback(wimMessageProc), 0)
-	fmt.Println("WIMRegisterMessageCallback:", idx, err)
-
-	dname, err := os.MkdirTemp("", "WIMTemp")
-	fmt.Println("os.MkdirTemp:", dname, err)
-	pszTempPath, _ := syscall.UTF16PtrFromString(dname)
-	err = native.WIMSetTemporaryPath(hWim, pszTempPath)
-	fmt.Println("WIMSetTemporaryPath:", err)
-
-	hImage, err := native.WIMLoadImage(hWim, 1)
-	fmt.Println("WIMLoadImage:", hImage, err)
-
-	xmlImageInfo, err := native.WIMGetImageInformation(hImage)
-	fmt.Println("WIMGetImageInformation:", xmlImageInfo, err)
-
-	pszPath, _ := syscall.UTF16PtrFromString("X:\\")
-
-	err = native.WIMApplyImage(hImage, pszPath, native.WIM_FLAG_NO_APPLY)
-	fmt.Println("WIMApplyImage:", err)
-}
 
 func tryRichOutput() {
 	var style1 = lipgloss.NewStyle().
@@ -166,17 +118,10 @@ func trySpinner() {
 }
 
 func main() {
-	if is, err := autope.IsMiniNT(); !is {
-		fmt.Println("This is not suppose run here.", err)
-	} else {
-		fmt.Println("Running under MiniNT", err)
-	}
 
 	t, err := toml.Marshal(autope.Playbook{})
 	fmt.Println(string(t), err)
 
 	tryRichOutput()
 	trySpinner()
-
-	p1()
 }

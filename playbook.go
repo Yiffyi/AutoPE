@@ -68,6 +68,8 @@ func (p *PlaybookPEStage) Run() (err error) {
 		fd.Close()
 
 		cmd = exec.Command("diskpart", "/s", scriptPath)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 		err = cmd.Run()
 		if err != nil {
 			return
@@ -93,9 +95,11 @@ func (p *PlaybookPEStage) Run() (err error) {
 		go native.WIMApplyImageByPath(p.ImagePath, uint32(p.ImageIndex), p.SystemVolume, cs)
 
 		p := tea.NewProgram(tui.CreateTUIAppltImage(cs))
+		SetupBubbleTeaLogger(p)
 		if _, err := p.Run(); err != nil {
 			fmt.Println(err)
 		}
+		SetupDefaultLogger()
 		if err != nil {
 			return
 		}

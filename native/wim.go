@@ -112,7 +112,7 @@ func WIMApplyImageByPath(wimPath string, imgIndex uint32, dst string, channels *
 
 	pszPath, _ := syscall.UTF16PtrFromString(dst)
 
-	err = WIMApplyImage(hImage, pszPath, WIM_FLAG_NO_APPLY)
+	err = WIMApplyImage(hImage, pszPath, 0)
 	if err != nil {
 		log.Error().Err(err).Msg("WIMApplyImage failed")
 		return err

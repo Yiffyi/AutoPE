@@ -5,7 +5,10 @@ import (
 	"os"
 	"os/exec"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/rs/zerolog/log"
 	"github.com/yiffyi/autope/native"
+	"github.com/yiffyi/autope/tui"
 )
 
 type PlaybookPEStage struct {
@@ -72,7 +75,27 @@ func (p *PlaybookPEStage) Run() (err error) {
 	}
 
 	if len(p.ImagePath) > 0 {
-		err = native.WIMApplyImageByPath(p.ImagePath, uint32(p.ImageIndex), p.SystemVolume, nil)
+		log.Info().
+			Str("imagePath", p.ImagePath).
+			Int("imageIndex", p.ImageIndex).
+			Str("systemVolume", p.SystemVolume).
+			Msg("apply WIM")
+
+		cs := &native.WIMMessageChannelList{
+			Process:  make(chan string, 16),
+			Progress: make(chan int, 16),
+			ETA:      make(chan uint64, 16),
+
+			Others: make(chan native.WimMessageId, 16),
+			Quit:   make(chan error, 16),
+		}
+
+		go native.WIMApplyImageByPath(p.ImagePath, uint32(p.ImageIndex), p.SystemVolume, cs)
+
+		p := tea.NewProgram(tui.CreateTUIAppltImage(cs))
+		if _, err := p.Run(); err != nil {
+			fmt.Println(err)
+		}
 		if err != nil {
 			return
 		}

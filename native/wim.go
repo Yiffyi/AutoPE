@@ -19,7 +19,13 @@ func WIMMessageToChan(dwMessageId WimMessageId, wParam uintptr, lParam uintptr, 
 		*pfProcessFile = true
 		fmt.Println(pszFullPath)
 	case WIM_MSG_PROGRESS:
-
+		/*
+			wParam = (UINT) dwPercent;
+			lParam = (UINT) dwTicksRemaining;
+		*/
+		dwPercent := uint32(wParam)
+		dwTicksRemaining := uint32(lParam)
+		fmt.Println("WIM_MSG_PROGRESS:", dwPercent, dwTicksRemaining)
 	}
 	return WIM_MSG_SUCCESS
 }

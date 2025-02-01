@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/rs/zerolog/log"
@@ -20,9 +21,11 @@ type PlaybookPEStage struct {
 	SystemVolume   string `comment:"系统分区"`
 	DataVolume     string `comment:"数据分区"`
 
-	FormatSystem bool `comment:"格式化系统分区"`
-	FormatData   bool `comment:"格式化数据分区"`
-	FormatBoot   bool `comment:"格式化启动分区"`
+	FixMBR     bool `comment:"修复MBR"`
+	FixBootMgr bool `comment:"修复引导"`
+	// FormatSystem bool `comment:"格式化系统分区"`
+	// FormatData   bool `comment:"格式化数据分区"`
+	// FormatBoot   bool `comment:"格式化启动分区"`
 
 	ImagePath  string `comment:"镜像路径"`
 	ImageIndex int    `comment:"镜像编号"`
@@ -102,6 +105,31 @@ func (p *PlaybookPEStage) Run() (err error) {
 		SetupDefaultLogger()
 		if err != nil {
 			return
+		}
+	}
+
+	if p.FixMBR {
+		cmd = exec.Command("bootsect", "/nt60", p.BootVolume, "/mbr", "/force")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
+		if err != nil {
+			log.Error().Err(err).Msg("writing MBR & PBR")
+		} else {
+			log.Info().Msg("written MBR & PBR")
+		}
+	}
+
+	if p.FixBootMgr {
+		winDir := filepath.Join(p.SystemVolume, `\Windows`)
+		cmd = exec.Command("bcdboot", winDir, "/s", p.BootVolume)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
+		if err != nil {
+			log.Error().Err(err).Msg("configuring bootmgr")
+		} else {
+			log.Info().Str("winDir", winDir).Msg("configured bootmgr")
 		}
 	}
 	return nil

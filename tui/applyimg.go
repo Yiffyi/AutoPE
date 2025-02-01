@@ -48,14 +48,15 @@ func (m *TUIApplyImage) receiveUpdateCmd() tea.Cmd {
 				return wimUpdateMsg{progress: false, quit: false}
 			case p2 := <-m.cs.Progress:
 				// fmt.Println("Progress", p2)
-				m.curProgress = float64(p2)
+				m.curProgress = float64(p2) / 100
 				return wimUpdateMsg{progress: true, quit: false}
 			case p3 := <-m.cs.ETA:
 				// tea.Println("WIM ETA", p3)
 				m.curETA = time.Duration(p3) * time.Millisecond
 				return wimUpdateMsg{progress: false, quit: false}
-			case p4 := <-m.cs.Others:
-				log.Info().Str("msgId", p4.String()).Msg("received other WIM Message")
+			case <-m.cs.Others:
+				// there are many undocumented WIM Messages, so we only pick what we use
+				// log.Info().Str("msgId", p4.String()).Msg("received other WIM Message")
 			case p5 := <-m.cs.Quit:
 				log.Info().Err(p5).Msg("WIM Quit")
 				m.err = p5
@@ -110,7 +111,7 @@ func (m *TUIApplyImage) View() string {
 	if m.err != nil {
 		return m.err.Error()
 	}
-	str := fmt.Sprintf("\n\n  %s %s\n  %s %f\npress q to quit\n\n", m.spinner.View(), m.curFileBaseName, m.progress.View(), m.curETA.Seconds())
+	str := fmt.Sprintf("\n\n  %s %s\n  %s ETA: %s\npress q to quit\n\n", m.spinner.View(), m.curFileBaseName, m.progress.View(), m.curETA)
 
 	return str
 }

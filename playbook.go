@@ -72,7 +72,7 @@ func (p *PlaybookPEStage) Run() (err error) {
 	}
 
 	if len(p.ImagePath) > 0 {
-		err = native.WIMApplyImageByPath(p.ImagePath, uint32(p.ImageIndex), p.SystemVolume)
+		err = native.WIMApplyImageByPath(p.ImagePath, uint32(p.ImageIndex), p.SystemVolume, nil)
 		if err != nil {
 			return
 		}

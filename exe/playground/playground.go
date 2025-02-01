@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
@@ -10,6 +11,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/yiffyi/autope"
+	"github.com/yiffyi/autope/native"
 )
 
 func tryRichOutput() {
@@ -34,32 +36,65 @@ func tryRichOutput() {
 	fmt.Println(style3.Render("I have border"))
 }
 
+type fileNameMsg string
+type progressMsg int
+type etaMsg time.Duration
 type errMsg error
 
 type model struct {
-	spinner  spinner.Model
 	progress progress.Model
+	spinner  spinner.Model
+
+	cs          *native.WIMMessageChannelList
+	curFileName string
+	curETA      time.Duration
+
 	quitting bool
 	err      error
 }
-
-type tickMsg time.Time
 
 func initialModel() model {
 	s := spinner.New()
 	s.Spinner = spinner.Line
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	return model{spinner: s, progress: progress.New(progress.WithDefaultGradient())}
+
+	cs := &native.WIMMessageChannelList{
+		Process:  make(chan string, 16),
+		Progress: make(chan int, 16),
+		ETA:      make(chan uint64, 16),
+		Others:   make(chan native.WimMessageId, 16),
+		Quit:     make(chan error, 16),
+	}
+
+	go native.WIMApplyImageByPath(`D:\sources\install.wim`, 1, `X:\`, cs)
+	return model{cs: cs, spinner: s, progress: progress.New(progress.WithDefaultGradient())}
 }
 
-func tickCmd() tea.Cmd {
-	return tea.Tick(time.Second*1, func(t time.Time) tea.Msg {
-		return tickMsg(t)
-	})
+func (m *model) receiveUpdateCmd() tea.Cmd {
+	return func() tea.Msg {
+		for {
+			select {
+			case p1 := <-m.cs.Process:
+				// fmt.Println("Process", p1)
+				return fileNameMsg(p1)
+			case p2 := <-m.cs.Progress:
+				// fmt.Println("Progress", p2)
+				return progressMsg(p2)
+			case p3 := <-m.cs.ETA:
+				// tea.Println("WIM ETA", p3)
+				return etaMsg(time.Duration(p3) * time.Millisecond)
+			case p4 := <-m.cs.Others:
+				tea.Println("WIM Message:", p4)
+			case p5 := <-m.cs.Quit:
+				// tea.Println("WIM Quit", p5)
+				return errMsg(p5)
+			}
+		}
+	}
 }
 
 func (m model) Init() tea.Cmd {
-	return tickCmd()
+	return tea.Batch(m.receiveUpdateCmd(), m.spinner.Tick)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -73,29 +108,34 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-	case tickMsg:
-		if m.progress.Percent() == 1.0 {
-			return m, tea.Quit
-		}
+	// from receiveUpdateCmd
+	case fileNameMsg:
+		m.curFileName = string(msg)
+		return m, m.receiveUpdateCmd()
+	case progressMsg:
+		cmd := m.progress.SetPercent(float64(msg))
+		return m, tea.Batch(cmd, m.receiveUpdateCmd())
+	case etaMsg:
+		m.curETA = time.Duration(msg)
+		return m, m.receiveUpdateCmd()
+	case errMsg:
+		m.err = msg
+		return m, tea.Quit
 
-		// Note that you can also use progress.Model.SetPercent to set the
-		// percentage value explicitly, too.
-		return m, tea.Batch(tickCmd(), m.progress.IncrPercent(0.25), m.spinner.Tick)
+	// from spinner.Tick
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
 
-	// FrameMsg is sent when the progress bar wants to animate itself
+	// from progress.Update
 	case progress.FrameMsg:
 		progressModel, cmd := m.progress.Update(msg)
 		m.progress = progressModel.(progress.Model)
 		return m, cmd
 
-	case errMsg:
-		m.err = msg
-		return m, nil
-
 	default:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
+		return m, nil
 	}
 }
 
@@ -103,7 +143,8 @@ func (m model) View() string {
 	if m.err != nil {
 		return m.err.Error()
 	}
-	str := fmt.Sprintf("\n\n  %s Loading forever\n  %s\npress q to quit\n\n", m.spinner.View(), m.progress.View())
+	baseName := filepath.Base(m.curFileName)
+	str := fmt.Sprintf("\n\n  %s %s\n  %s %f\npress q to quit\n\n", m.spinner.View(), baseName, m.progress.View(), m.curETA.Seconds())
 	if m.quitting {
 		return str + "\n"
 	}

@@ -109,7 +109,7 @@ func (p *PlaybookPEStage) Run() (err error) {
 	}
 
 	if p.FixMBR {
-		cmd = exec.Command("bootsect", "/nt60", p.BootVolume, "/mbr", "/force")
+		cmd = exec.Command("bootsect", "/nt60", filepath.VolumeName(p.BootVolume), "/mbr", "/force")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		err = cmd.Run()

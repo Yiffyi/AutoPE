@@ -6,7 +6,7 @@ require (
 	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.2.4
 	github.com/charmbracelet/lipgloss v1.0.0
-	github.com/go-ole/go-ole v1.2.6
+	github.com/go-ole/go-ole v1.3.0
 	github.com/pelletier/go-toml/v2 v2.2.2
 	github.com/rs/zerolog v1.33.0
 	github.com/yusufpapurcu/wmi v1.2.4

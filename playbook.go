@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/go-ole/go-ole"
 	"github.com/rs/zerolog/log"
 	"github.com/yiffyi/autope/native"
 	"github.com/yiffyi/autope/tui"
@@ -164,7 +163,7 @@ func (p *PlaybookPEStage) Run() (err error) {
 	}
 
 	wmi.CoInitialize()
-	defer ole.CoUninitialize()
+	defer wmi.CoUninitialize()
 
 	locator, err := wmi.NewSWbemLocator()
 	if err == nil {

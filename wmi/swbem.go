@@ -5,49 +5,9 @@ import (
 	"runtime"
 	"sync"
 
-	"errors"
-
 	"github.com/go-ole/go-ole"
 	"github.com/rs/zerolog/log"
 )
-
-var (
-	// ErrNegativeCounter is returned when the internal counter of a shim drops
-	// below zero. This may indicate that Done() has been called more than once
-	// for the same object.
-	ErrNegativeCounter = errors.New("component object model shim counter has dropped below zero")
-
-	// ErrAlreadyInitialized is returned when a shim finds itself on a thread
-	// that has already been initialized. This probably indicates that some
-	// previous goroutine failed to lock the OS thread or failed to call
-	// CoUninitialize when it should have.
-	ErrAlreadyInitialized = errors.New("component object model shim thread has already been initialized")
-)
-
-func CoInitialize() error {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
-	if err := ole.CoInitializeEx(0, ole.COINIT_MULTITHREADED); err != nil {
-		switch err.(*ole.OleError).Code() {
-		case 0x00000001: // S_FALSE
-			// Some other goroutine called CoInitialize on this thread
-			// before we ended up with it. This probably means the other
-			// caller failed to lock the OS thread or failed to call
-			// CoUninitialize.
-
-			// We still decrement this thread's initialization counter by
-			// calling CoUninitialize here, as recommended by the docs.
-			ole.CoUninitialize()
-
-			// Send an error so that shim.Add panics
-			return ErrAlreadyInitialized
-		default:
-			return err
-		}
-	}
-	return nil
-}
 
 func swbmBaseCloser(p *SWbemBase) {
 	p.close()

@@ -38,7 +38,7 @@ type Playbook struct {
 	PEStage PlaybookPEStage `comment:"PE阶段"`
 }
 
-func (p *PlaybookPEStage) formatVolumeWithWMI(svc *wmi.SWbemServices) (err error) {
+func formatVolumeWithWMI(svc *wmi.SWbemServices, chk func(string, *wmi.SWbemObject) (fs, label string)) (err error) {
 	querySet, err := svc.InstancesOf("Win32_Volume")
 	if err != nil {
 		return err
@@ -57,31 +57,10 @@ func (p *PlaybookPEStage) formatVolumeWithWMI(svc *wmi.SWbemServices) (err error
 		}
 		driveLetter := v.PropertyMustGetValue("DriveLetter").(string)
 
-		var fs, label string
+		// var fs, label string
 
-		/*
-			in WMI, Win32_Volume,
-			BootVolume means the volume contains Windows
-			SystemVolume means the volume contains bootloader
-		*/
-		if p.FormatBoot && driveLetter == filepath.VolumeName(p.BootVolume) {
-			fs = "FAT32"
-			label = "BOOT"
-
-			if !v.PropertyMustGetValue("SystemVolume").(bool) {
-				log.Warn().Str("driveLetter", driveLetter).Msg("is not considered as a boot volume by WMI")
-			}
-		} else if p.FormatSystem && driveLetter == filepath.VolumeName(p.SystemVolume) {
-			fs = "NTFS"
-			label = "SYSTEM"
-
-			if !v.PropertyMustGetValue("BootVolume").(bool) {
-				log.Warn().Str("driveLetter", driveLetter).Msg("is not considered as a system volume by WMI")
-			}
-		} else if p.FormatData && driveLetter == filepath.VolumeName(p.DataVolume) {
-			fs = "NTFS"
-			label = "DATA"
-		} else {
+		fs, label := chk(driveLetter, v)
+		if len(fs) == 0 {
 			continue
 		}
 
@@ -166,16 +145,44 @@ func (p *PlaybookPEStage) Run() (err error) {
 	defer wmi.CoUninitialize()
 
 	locator, err := wmi.NewSWbemLocator()
-	if err == nil {
-		svc, err := locator.ConnectServerDefault()
-		if err == nil {
-			p.formatVolumeWithWMI(svc)
-		} else {
-			log.Error().Err(err).Msg("could not connect to WMI service")
-		}
-	} else {
+	if err != nil {
 		log.Error().Err(err).Msg("could not initialize WMI service locator")
+		return err
+		// return nil, err
 	}
+
+	svc, err := locator.ConnectServerDefault()
+	if err != nil {
+		log.Error().Err(err).Msg("could not connect to WMI service")
+		return err
+	}
+
+	formatVolumeWithWMI(svc, func(driveLetter string, v *wmi.SWbemObject) (fs, label string) {
+		/*
+			in WMI, Win32_Volume,
+			BootVolume means the volume contains Windows
+			SystemVolume means the volume contains bootloader
+		*/
+		if p.FormatBoot && driveLetter == filepath.VolumeName(p.BootVolume) {
+			fs = "FAT32"
+			label = "BOOT"
+
+			if !v.PropertyMustGetValue("SystemVolume").(bool) {
+				log.Warn().Str("driveLetter", driveLetter).Msg("is not considered as a boot volume by WMI")
+			}
+		} else if p.FormatSystem && driveLetter == filepath.VolumeName(p.SystemVolume) {
+			fs = "NTFS"
+			label = "SYSTEM"
+
+			if !v.PropertyMustGetValue("BootVolume").(bool) {
+				log.Warn().Str("driveLetter", driveLetter).Msg("is not considered as a system volume by WMI")
+			}
+		} else {
+			fs = ""
+			label = ""
+		}
+		return
+	})
 
 	if len(p.ImagePath) > 0 {
 		log.Info().
@@ -206,6 +213,20 @@ func (p *PlaybookPEStage) Run() (err error) {
 		if tui.Error != nil {
 			return tui.Error
 		}
+	}
+
+	// delay the format of DataVolume, so that we can leave something in DataVolume
+	if p.FormatData {
+		formatVolumeWithWMI(svc, func(driveLetter string, _ *wmi.SWbemObject) (fs, label string) {
+			if driveLetter == filepath.VolumeName(p.DataVolume) {
+				fs = "NTFS"
+				label = "DATA"
+			} else {
+				fs = ""
+				label = ""
+			}
+			return
+		})
 	}
 
 	if p.FixMBR {

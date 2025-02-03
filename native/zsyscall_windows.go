@@ -38,8 +38,10 @@ func errnoErr(e syscall.Errno) error {
 }
 
 var (
-	modwimgapi = windows.NewLazySystemDLL("wimgapi.dll")
+	modAdvapi32 = windows.NewLazySystemDLL("Advapi32.dll")
+	modwimgapi  = windows.NewLazySystemDLL("wimgapi.dll")
 
+	procRegLoadKeyW                = modAdvapi32.NewProc("RegLoadKeyW")
 	procWIMApplyImage              = modwimgapi.NewProc("WIMApplyImage")
 	procWIMCloseHandle             = modwimgapi.NewProc("WIMCloseHandle")
 	procWIMCreateFile              = modwimgapi.NewProc("WIMCreateFile")
@@ -51,6 +53,15 @@ var (
 	procWIMRegisterMessageCallback = modwimgapi.NewProc("WIMRegisterMessageCallback")
 	procWIMSetTemporaryPath        = modwimgapi.NewProc("WIMSetTemporaryPath")
 )
+
+func regLoadKey(hKey syscall.Handle, lpSubKey *uint16, lpFile *uint16) (lstatus uint32, err error) {
+	r0, _, e1 := syscall.Syscall(procRegLoadKeyW.Addr(), 3, uintptr(hKey), uintptr(unsafe.Pointer(lpSubKey)), uintptr(unsafe.Pointer(lpFile)))
+	lstatus = uint32(r0)
+	if lstatus == 0 {
+		err = errnoErr(e1)
+	}
+	return
+}
 
 func WIMApplyImage(hImage syscall.Handle, pszPath *uint16, dwApplyFlags uint32) (err error) {
 	r1, _, e1 := syscall.Syscall(procWIMApplyImage.Addr(), 3, uintptr(hImage), uintptr(unsafe.Pointer(pszPath)), uintptr(dwApplyFlags))

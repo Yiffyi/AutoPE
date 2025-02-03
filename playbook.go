@@ -198,12 +198,14 @@ func (p *PlaybookPEStage) Run() (err error) {
 
 		p := tea.NewProgram(tui.CreateTUIAppltImage(cs))
 		SetupBubbleTeaLogger(p)
-		if _, err := p.Run(); err != nil {
-			fmt.Println(err)
-		}
+		m, err := p.Run()
 		SetupDefaultLogger()
 		if err != nil {
-			return
+			return err
+		}
+		tui := m.(*tui.TUIApplyImage)
+		if tui.Error != nil {
+			return tui.Error
 		}
 	}
 

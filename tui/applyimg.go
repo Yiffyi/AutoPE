@@ -22,12 +22,12 @@ type TUIApplyImage struct {
 	curETA          time.Duration
 	curProgress     float64
 
-	err error
+	Error error
 }
 
 type wimUpdateMsg struct {
 	progress bool
-	quit     bool
+	quit     error
 }
 
 func CreateTUIAppltImage(channels *native.WIMMessageChannelList) *TUIApplyImage {
@@ -45,22 +45,22 @@ func (m *TUIApplyImage) receiveUpdateCmd() tea.Cmd {
 			case p1 := <-m.cs.Process:
 				// fmt.Println("Process", p1)
 				m.curFileBaseName = filepath.Base(p1)
-				return wimUpdateMsg{progress: false, quit: false}
+				return wimUpdateMsg{progress: false, quit: nil}
 			case p2 := <-m.cs.Progress:
 				// fmt.Println("Progress", p2)
 				m.curProgress = float64(p2) / 100
-				return wimUpdateMsg{progress: true, quit: false}
+				return wimUpdateMsg{progress: true, quit: nil}
 			case p3 := <-m.cs.ETA:
 				// tea.Println("WIM ETA", p3)
 				m.curETA = time.Duration(p3) * time.Millisecond
-				return wimUpdateMsg{progress: false, quit: false}
+				return wimUpdateMsg{progress: false, quit: nil}
 			case <-m.cs.Others:
 				// there are many undocumented WIM Messages, so we only pick what we use
 				// log.Info().Str("msgId", p4.String()).Msg("received other WIM Message")
 			case p5 := <-m.cs.Quit:
 				log.Info().Err(p5).Msg("WIM Quit")
-				m.err = p5
-				return wimUpdateMsg{progress: false, quit: true}
+				m.Error = p5
+				return wimUpdateMsg{progress: false, quit: m.Error}
 			}
 		}
 	}
@@ -85,7 +85,7 @@ func (m *TUIApplyImage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case wimUpdateMsg:
 		if msg.progress {
 			return m, tea.Batch(m.receiveUpdateCmd(), m.progress.SetPercent(m.curProgress))
-		} else if msg.quit {
+		} else if msg.quit != nil {
 			return m, tea.Quit
 		} else {
 			return m, m.receiveUpdateCmd()
@@ -109,8 +109,8 @@ func (m *TUIApplyImage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *TUIApplyImage) View() string {
-	if m.err != nil {
-		return m.err.Error()
+	if m.Error != nil {
+		return m.Error.Error()
 	}
 	str := fmt.Sprintf("\n\n  %s %s\n  %s ETA: %s\npress q to quit\n\n", m.spinner.View(), m.curFileBaseName, m.progress.View(), m.curETA)
 

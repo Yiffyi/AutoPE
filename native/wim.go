@@ -10,10 +10,13 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-type WIMMessageChannelList struct {
+type WIMMessageContext struct {
+	FileCount uint32
+	FileIndex uint32
+
 	Process  chan string
 	Progress chan int
-	ETA      chan uint64
+	ETA      chan uint32
 
 	Others chan WimMessageId
 	Quit   chan error
@@ -22,11 +25,17 @@ type WIMMessageChannelList struct {
 }
 
 func WIMMessageToChan(dwMessageId WimMessageId, wParam *byte, lParam *byte, pvUserData *byte) uintptr {
-	cs := (*WIMMessageChannelList)(unsafe.Pointer(pvUserData))
+	ctx := (*WIMMessageContext)(unsafe.Pointer(pvUserData))
 
 	switch dwMessageId {
+	case WIM_MSG_SETRANGE:
+		dwFileCount := uint32(uintptr(unsafe.Pointer(lParam)))
+		ctx.FileCount = dwFileCount
+	case WIM_MSG_SETPOS:
+		dwFileCount := uint32(uintptr(unsafe.Pointer(lParam)))
+		ctx.FileIndex = dwFileCount
 	case WIM_MSG_QUERY_ABORT:
-		if cs.Cancel {
+		if ctx.Cancel {
 			return WIM_MSG_ABORT_IMAGE
 		} else {
 			return WIM_MSG_SUCCESS
@@ -37,9 +46,9 @@ func WIMMessageToChan(dwMessageId WimMessageId, wParam *byte, lParam *byte, pvUs
 		var pfProcessFile *bool = (*bool)(unsafe.Pointer(lParam))
 		*pfProcessFile = true
 
-		cs.Process <- pszFullPath
+		ctx.Process <- pszFullPath
 		// fmt.Println(pszFullPath)
-		if cs.Cancel {
+		if ctx.Cancel {
 			return WIM_MSG_ABORT_IMAGE
 		} else {
 			return WIM_MSG_SUCCESS
@@ -50,12 +59,12 @@ func WIMMessageToChan(dwMessageId WimMessageId, wParam *byte, lParam *byte, pvUs
 			lParam = (UINT) dwTicksRemaining;
 		*/
 		dwPercent := int(uintptr(unsafe.Pointer(wParam)))
-		dwTicksRemaining := uint64(uintptr(unsafe.Pointer(lParam)))
+		dwTicksRemaining := uint32(uintptr(unsafe.Pointer(lParam)))
 
-		cs.Progress <- dwPercent
-		cs.ETA <- dwTicksRemaining
+		ctx.Progress <- dwPercent
+		ctx.ETA <- dwTicksRemaining
 	default:
-		cs.Others <- dwMessageId
+		ctx.Others <- dwMessageId
 		// fmt.Println("Received WIM Message:", dwMessageId)
 	}
 	return WIM_MSG_SUCCESS
@@ -63,13 +72,13 @@ func WIMMessageToChan(dwMessageId WimMessageId, wParam *byte, lParam *byte, pvUs
 
 var myWIMMessageCallback = syscall.NewCallback(WIMMessageToChan)
 
-func WIMApplyImageByPath(wimPath string, imgIndex uint32, dst string, channels *WIMMessageChannelList) {
+func WIMApplyImageByPath(wimPath string, imgIndex uint32, dst string, ctx *WIMMessageContext) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
 	var err error
 	defer func() {
-		channels.Quit <- err
+		ctx.Quit <- err
 	}()
 
 	pszWimPath, _ := syscall.UTF16PtrFromString(wimPath)
@@ -92,7 +101,7 @@ func WIMApplyImageByPath(wimPath string, imgIndex uint32, dst string, channels *
 		Msg("WIMGetAttributes")
 
 	// fmt.Println("wimInfo:", wimInfo, err)
-	idx, err := WIMRegisterMessageCallback(hWim, myWIMMessageCallback, uintptr(unsafe.Pointer(channels)))
+	idx, err := WIMRegisterMessageCallback(hWim, myWIMMessageCallback, uintptr(unsafe.Pointer(ctx)))
 	if err != nil {
 		log.Error().Err(err).Msg("WIMRegisterMessageCallback failed")
 		return

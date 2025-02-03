@@ -185,18 +185,18 @@ func (p *PlaybookPEStage) Run() (err error) {
 			Str("systemVolume", p.SystemVolume).
 			Msg("apply WIM")
 
-		cs := &native.WIMMessageChannelList{
+		ctx := &native.WIMMessageContext{
 			Process:  make(chan string, 16),
-			Progress: make(chan int, 16),
-			ETA:      make(chan uint64, 16),
+			Progress: make(chan int),
+			ETA:      make(chan uint32),
 
 			Others: make(chan native.WimMessageId, 16),
-			Quit:   make(chan error, 16),
+			Quit:   make(chan error),
 		}
 
-		go native.WIMApplyImageByPath(p.ImagePath, uint32(p.ImageIndex), p.SystemVolume, cs)
+		go native.WIMApplyImageByPath(p.ImagePath, uint32(p.ImageIndex), p.SystemVolume, ctx)
 
-		p := tea.NewProgram(tui.CreateTUIAppltImage(cs))
+		p := tea.NewProgram(tui.CreateTUIAppltImage(ctx))
 		SetupBubbleTeaLogger(p)
 		m, err := p.Run()
 		SetupDefaultLogger()

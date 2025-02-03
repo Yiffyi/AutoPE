@@ -17,7 +17,7 @@ type TUIApplyImage struct {
 	progress progress.Model
 	spinner  spinner.Model
 
-	cs              *native.WIMMessageChannelList
+	ctx             *native.WIMMessageContext
 	curFileBaseName string
 	curETA          time.Duration
 	curProgress     float64
@@ -27,40 +27,40 @@ type TUIApplyImage struct {
 
 type wimUpdateMsg struct {
 	progress bool
-	quit     error
+	quit     bool
 }
 
-func CreateTUIAppltImage(channels *native.WIMMessageChannelList) *TUIApplyImage {
+func CreateTUIAppltImage(ctx *native.WIMMessageContext) *TUIApplyImage {
 	s := spinner.New()
 	s.Spinner = spinner.Line
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
-	return &TUIApplyImage{cs: channels, spinner: s, progress: progress.New(progress.WithDefaultGradient())}
+	return &TUIApplyImage{ctx: ctx, spinner: s, progress: progress.New(progress.WithDefaultGradient())}
 }
 
 func (m *TUIApplyImage) receiveUpdateCmd() tea.Cmd {
 	return func() tea.Msg {
 		for {
 			select {
-			case p1 := <-m.cs.Process:
+			case p1 := <-m.ctx.Process:
 				// fmt.Println("Process", p1)
 				m.curFileBaseName = filepath.Base(p1)
-				return wimUpdateMsg{progress: false, quit: nil}
-			case p2 := <-m.cs.Progress:
+				return wimUpdateMsg{progress: false, quit: false}
+			case p2 := <-m.ctx.Progress:
 				// fmt.Println("Progress", p2)
 				m.curProgress = float64(p2) / 100
-				return wimUpdateMsg{progress: true, quit: nil}
-			case p3 := <-m.cs.ETA:
+				return wimUpdateMsg{progress: true, quit: false}
+			case p3 := <-m.ctx.ETA:
 				// tea.Println("WIM ETA", p3)
 				m.curETA = time.Duration(p3) * time.Millisecond
-				return wimUpdateMsg{progress: false, quit: nil}
-			case <-m.cs.Others:
+				return wimUpdateMsg{progress: false, quit: false}
+			case <-m.ctx.Others:
 				// there are many undocumented WIM Messages, so we only pick what we use
 				// log.Info().Str("msgId", p4.String()).Msg("received other WIM Message")
-			case p5 := <-m.cs.Quit:
+			case p5 := <-m.ctx.Quit:
 				log.Info().Err(p5).Msg("WIM Quit")
 				m.Error = p5
-				return wimUpdateMsg{progress: false, quit: m.Error}
+				return wimUpdateMsg{progress: false, quit: true}
 			}
 		}
 	}
@@ -75,7 +75,7 @@ func (m *TUIApplyImage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
-			m.cs.Cancel = true
+			m.ctx.Cancel = true
 			return m, nil
 		default:
 			return m, nil
@@ -85,7 +85,7 @@ func (m *TUIApplyImage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case wimUpdateMsg:
 		if msg.progress {
 			return m, tea.Batch(m.receiveUpdateCmd(), m.progress.SetPercent(m.curProgress))
-		} else if msg.quit != nil {
+		} else if msg.quit {
 			return m, tea.Quit
 		} else {
 			return m, m.receiveUpdateCmd()
@@ -112,7 +112,7 @@ func (m *TUIApplyImage) View() string {
 	if m.Error != nil {
 		return m.Error.Error()
 	}
-	str := fmt.Sprintf("\n\n  %s %s\n  %s ETA: %s\npress q to quit\n\n", m.spinner.View(), m.curFileBaseName, m.progress.View(), m.curETA)
+	str := fmt.Sprintf("\n  %s %s\n  %s [%d / %d] ETA: %s\npress q to quit\n", m.spinner.View(), m.curFileBaseName, m.progress.View(), m.ctx.FileIndex, m.ctx.FileCount, m.curETA)
 
 	return str
 }

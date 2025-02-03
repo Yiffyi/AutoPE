@@ -25,9 +25,9 @@ var (
 	ErrAlreadyInitialized = errors.New("component object model shim thread has already been initialized")
 )
 
-// func simplyClose(p *SWbemBase) {
-// 	p.close()
-// }
+func swbmBaseCloser(p *SWbemBase) {
+	p.close()
+}
 
 type SWbemBase struct {
 	m sync.Mutex
@@ -40,7 +40,7 @@ func (s *SWbemBase) init(i *ole.IDispatch, typeName string) {
 	s.i = i
 	s.typeName = typeName
 
-	runtime.SetFinalizer(s, s.close)
+	runtime.SetFinalizer(s, swbmBaseCloser)
 }
 
 func (s *SWbemBase) close() {

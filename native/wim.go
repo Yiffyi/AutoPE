@@ -49,9 +49,11 @@ func WIMMessageToChan(dwMessageId WimMessageId, wParam *byte, lParam *byte, pvUs
 
 var myWIMMessageCallback = syscall.NewCallback(WIMMessageToChan)
 
-func WIMApplyImageByPath(wimPath string, imgIndex uint32, dst string, channels *WIMMessageChannelList) (err error) {
+func WIMApplyImageByPath(wimPath string, imgIndex uint32, dst string, channels *WIMMessageChannelList) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+
+	var err error
 	defer func() {
 		channels.Quit <- err
 	}()
@@ -62,7 +64,7 @@ func WIMApplyImageByPath(wimPath string, imgIndex uint32, dst string, channels *
 	hWim, err := WIMCreateFile(pszWimPath, windows.GENERIC_READ, windows.OPEN_EXISTING, WIM_UNDOCUMENTED_BULLSHIT|WIM_FLAG_VERIFY, WIM_COMPRESS_NONE, nil)
 	if err != nil {
 		log.Error().Err(err).Str("wimPath", wimPath).Msg("WIMCreateFile failed")
-		return err
+		return
 	}
 	// fmt.Println(hWim, err)
 
@@ -79,7 +81,7 @@ func WIMApplyImageByPath(wimPath string, imgIndex uint32, dst string, channels *
 	idx, err := WIMRegisterMessageCallback(hWim, myWIMMessageCallback, uintptr(unsafe.Pointer(channels)))
 	if err != nil {
 		log.Error().Err(err).Msg("WIMRegisterMessageCallback failed")
-		return err
+		return
 	}
 	log.Debug().Uint32("idx", idx).Msg("registered myWIMMessageCallback")
 	// fmt.Println("WIMRegisterMessageCallback:", idx, err)
@@ -87,7 +89,7 @@ func WIMApplyImageByPath(wimPath string, imgIndex uint32, dst string, channels *
 	dname, err := os.MkdirTemp("", "autope_wimgapi_temp")
 	if err != nil {
 		log.Error().Err(err).Msg("os.MkdirTemp failed")
-		return err
+		return
 	}
 	// fmt.Println("os.MkdirTemp:", dname, err)
 	log.Debug().Str("dir", dname).Msg("created temp dir")
@@ -96,14 +98,14 @@ func WIMApplyImageByPath(wimPath string, imgIndex uint32, dst string, channels *
 	err = WIMSetTemporaryPath(hWim, pszTempPath)
 	if err != nil {
 		log.Error().Err(err).Msg("WIMSetTemporaryPath failed")
-		return err
+		return
 	}
 	// fmt.Println("WIMSetTemporaryPath:", err)
 
 	hImage, err := WIMLoadImage(hWim, imgIndex)
 	if err != nil {
 		log.Error().Err(err).Msg("WIMLoadImage failed")
-		return err
+		return
 	}
 	// fmt.Println("WIMLoadImage:", hImage, err)
 
@@ -115,7 +117,7 @@ func WIMApplyImageByPath(wimPath string, imgIndex uint32, dst string, channels *
 	err = WIMApplyImage(hImage, pszPath, 0)
 	if err != nil {
 		log.Error().Err(err).Msg("WIMApplyImage failed")
-		return err
+		return
 	}
 	// fmt.Println("WIMApplyImage:", err)
 

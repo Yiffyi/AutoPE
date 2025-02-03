@@ -221,7 +221,7 @@ func (p *PlaybookPEStage) Run() (err error) {
 
 	if p.FixBootMgr {
 		winDir := filepath.Join(p.SystemVolume, `\Windows`)
-		cmd = exec.Command("bcdboot", winDir, "/s", p.BootVolume, "/v")
+		cmd = exec.Command("bcdboot", winDir, "/s", p.BootVolume)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		err = cmd.Run()

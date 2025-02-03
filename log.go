@@ -30,7 +30,7 @@ func (l *logToBubbleTea) Write(p []byte) (n int, err error) {
 		p = p[0 : n-1]
 	}
 	l.p.Println(string(p))
-	return len(p), nil
+	return n, nil
 }
 
 func SetupBubbleTeaLogger(p *tea.Program) {

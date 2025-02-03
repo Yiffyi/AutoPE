@@ -17,12 +17,21 @@ type WIMMessageChannelList struct {
 
 	Others chan WimMessageId
 	Quit   chan error
+
+	Cancel bool
 }
 
 func WIMMessageToChan(dwMessageId WimMessageId, wParam *byte, lParam *byte, pvUserData *byte) uintptr {
 	cs := (*WIMMessageChannelList)(unsafe.Pointer(pvUserData))
 
 	switch dwMessageId {
+	case WIM_MSG_QUERY_ABORT:
+		if cs.Cancel {
+			return WIM_MSG_ABORT_IMAGE
+		} else {
+			return WIM_MSG_SUCCESS
+		}
+
 	case WIM_MSG_PROCESS:
 		pszFullPath := UTF16PtrToString((*uint16)(unsafe.Pointer(wParam)))
 		var pfProcessFile *bool = (*bool)(unsafe.Pointer(lParam))
@@ -30,6 +39,11 @@ func WIMMessageToChan(dwMessageId WimMessageId, wParam *byte, lParam *byte, pvUs
 
 		cs.Process <- pszFullPath
 		// fmt.Println(pszFullPath)
+		if cs.Cancel {
+			return WIM_MSG_ABORT_IMAGE
+		} else {
+			return WIM_MSG_SUCCESS
+		}
 	case WIM_MSG_PROGRESS:
 		/*
 			wParam = (UINT) dwPercent;

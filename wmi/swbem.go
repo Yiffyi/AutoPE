@@ -25,6 +25,32 @@ var (
 	ErrAlreadyInitialized = errors.New("component object model shim thread has already been initialized")
 )
 
+// func simplyClose(p *SWbemBase) {
+// 	p.close()
+// }
+
+type SWbemBase struct {
+	m sync.Mutex
+	i *ole.IDispatch
+
+	typeName string
+}
+
+func (s *SWbemBase) init(i *ole.IDispatch, typeName string) {
+	s.i = i
+	s.typeName = typeName
+
+	runtime.SetFinalizer(s, s.close)
+}
+
+func (s *SWbemBase) close() {
+	log.Debug().Str("type", s.typeName).Str("i", fmt.Sprint(s.i)).Msg("SWbemBase close")
+	if s.i != nil {
+		s.i.Release()
+		s.i = nil
+	}
+}
+
 func CoInitialize() error {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
@@ -50,17 +76,8 @@ func CoInitialize() error {
 	return nil
 }
 
-type Closer interface {
-	Close()
-}
-
-func simplyClose(p Closer) {
-	p.Close()
-}
-
 type SWbemProperty struct {
-	m sync.Mutex
-	i *ole.IDispatch
+	SWbemBase
 
 	IsArray bool
 	IsLocal bool
@@ -95,20 +112,9 @@ func newSWbemProperty(i *ole.IDispatch) (*SWbemProperty, error) {
 	}
 	defer origin.Clear()
 
-	p := &SWbemProperty{i: i, IsArray: isArray.Val > 0, IsLocal: isLocal.Val > 0, Name: name.ToString(), Origin: origin.ToString()}
-
-	runtime.SetFinalizer(p, simplyClose)
+	p := &SWbemProperty{IsArray: isArray.Val > 0, IsLocal: isLocal.Val > 0, Name: name.ToString(), Origin: origin.ToString()}
+	p.init(i, "SWbemProperty")
 	return p, nil
-}
-
-func (s *SWbemProperty) Close() {
-	log.Debug().Str("s", fmt.Sprint(s)).Msg("Closing SWbemProperty")
-	if s.i != nil {
-		s.i.Release()
-		s.i = nil
-	}
-	// s.i.Release()
-	// comshim.Done()
 }
 
 func (s *SWbemProperty) ValueGet() (interface{}, error) {
@@ -136,23 +142,14 @@ func (s *SWbemProperty) ValuePut(v interface{}) error {
 }
 
 type SWbemObject struct {
-	m sync.Mutex
-	i *ole.IDispatch
+	SWbemBase
 }
 
 func newSWbemObject(i *ole.IDispatch) *SWbemObject {
 	// comshim.Add(1)
-	obj := &SWbemObject{i: i}
-	runtime.SetFinalizer(obj, simplyClose)
+	obj := &SWbemObject{}
+	obj.init(i, "SWbemObject")
 	return obj
-}
-
-func (s *SWbemObject) Close() {
-	if s.i != nil {
-		s.i.Release()
-		s.i = nil
-	}
-	// comshim.Done()
 }
 
 func (s *SWbemObject) ExecMethod_(methodName string, inParam *SWbemObject) (*SWbemObject, error) {
@@ -212,7 +209,6 @@ func (s *SWbemObject) PropertyMustGetValue(propertyName string) interface{} {
 	if err != nil {
 		panic(err)
 	}
-	defer prop.Close()
 
 	v, err := prop.ValueGet()
 	if err != nil {
@@ -226,7 +222,6 @@ func (s *SWbemObject) PropertyPutValue(propertyName string, value interface{}) e
 	if err != nil {
 		return err
 	}
-	defer prop.Close()
 
 	err = prop.ValuePut(value)
 	if err != nil {
@@ -258,23 +253,14 @@ func (s *SWbemObject) String() string {
 }
 
 type SWbemObjectSet struct {
-	m sync.Mutex
-	i *ole.IDispatch
+	SWbemBase
 }
 
 func newSWbemObjectSet(i *ole.IDispatch) *SWbemObjectSet {
 	// comshim.Add(1)
-	obj := &SWbemObjectSet{i: i}
-	runtime.SetFinalizer(obj, simplyClose)
+	obj := &SWbemObjectSet{}
+	obj.init(i, "SWbemObjectSet")
 	return obj
-}
-
-func (s *SWbemObjectSet) Close() {
-	if s.i != nil {
-		s.i.Release()
-		s.i = nil
-	}
-	// comshim.Done()
 }
 
 func (s *SWbemObjectSet) ForEach(f func(v *SWbemObject) error) error {
@@ -317,23 +303,14 @@ func (s *SWbemObjectSet) ToSlice() ([]*SWbemObject, error) {
 }
 
 type SWbemServices struct {
-	m sync.Mutex
-	i *ole.IDispatch
+	SWbemBase
 }
 
 func newSWbemServices(i *ole.IDispatch) *SWbemServices {
 	// comshim.Add(1)
-	obj := &SWbemServices{i: i}
-	runtime.SetFinalizer(obj, simplyClose)
+	obj := &SWbemServices{}
+	obj.init(i, "SWbemServices")
 	return obj
-}
-
-func (s *SWbemServices) Close() {
-	if s.i != nil {
-		s.i.Release()
-		s.i = nil
-	}
-	// comshim.Done()
 }
 
 func (s *SWbemServices) ExecQuery(query string) (*SWbemObjectSet, error) {
@@ -395,8 +372,7 @@ func (s *SWbemServices) ExecMethod(objectPath, methodName string, inParam *SWbem
 }
 
 type SWbemLocator struct {
-	m sync.Mutex
-	i *ole.IDispatch
+	SWbemBase
 }
 
 func NewSWbemLocator() (*SWbemLocator, error) {
@@ -411,22 +387,15 @@ func NewSWbemLocator() (*SWbemLocator, error) {
 		return nil, err
 	}
 
-	s.i, err = unknown.QueryInterface(ole.IID_IDispatch)
+	dispatch, err := unknown.QueryInterface(ole.IID_IDispatch)
 	if err != nil {
 		// comshim.Done()
 		return nil, err
 	}
 
-	runtime.SetFinalizer(&s, simplyClose)
-	return &s, nil
-}
+	s.init(dispatch, "SWbemLocator")
 
-func (s *SWbemLocator) Close() {
-	if s.i != nil {
-		s.i.Release()
-		s.i = nil
-	}
-	// comshim.Done()
+	return &s, nil
 }
 
 func (s *SWbemLocator) ConnectServer(server, namespace, user, password string) (*SWbemServices, error) {

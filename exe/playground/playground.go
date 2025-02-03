@@ -38,21 +38,18 @@ func tryWMI() {
 		fmt.Println("NewSWbemLocator:", err)
 		return
 	}
-	defer locator.Close()
 
 	service, err := locator.ConnectServerDefault()
 	if err != nil {
 		fmt.Println("ConnectServerDefault:", err)
 		return
 	}
-	defer service.Close()
 
 	volumes, err := service.ExecQuery("SELECT * FROM Win32_Volume")
 	if err != nil {
 		fmt.Println("ExecQuery:", err)
 		return
 	}
-	defer volumes.Close()
 
 	cnt, err := volumes.Count()
 	fmt.Println("Count:", cnt, err)

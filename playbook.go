@@ -44,7 +44,6 @@ func (p *PlaybookPEStage) formatVolumeWithWMI(svc *wmi.SWbemServices) (err error
 	if err != nil {
 		return err
 	}
-	defer querySet.Close()
 
 	volumes, err := querySet.ToSlice()
 	if err != nil {
@@ -53,8 +52,6 @@ func (p *PlaybookPEStage) formatVolumeWithWMI(svc *wmi.SWbemServices) (err error
 	log.Info().Int("count", len(volumes)).Msg("found volumes")
 
 	for _, v := range volumes {
-		defer v.Close()
-
 		text, err := v.GetObjectText()
 		if err == nil {
 			log.Debug().Str("obj", text).Msg("looking at volume")
@@ -94,7 +91,6 @@ func (p *PlaybookPEStage) formatVolumeWithWMI(svc *wmi.SWbemServices) (err error
 		if err != nil {
 			return err
 		}
-		defer inParam.Close()
 
 		err = inParam.PropertyPutValue("FileSystem", fs)
 		if err != nil {
@@ -175,11 +171,9 @@ func (p *PlaybookPEStage) Run() (err error) {
 		svc, err := locator.ConnectServerDefault()
 		if err == nil {
 			p.formatVolumeWithWMI(svc)
-			svc.Close()
 		} else {
 			log.Error().Err(err).Msg("could not connect to WMI service")
 		}
-		locator.Close()
 	} else {
 		log.Error().Err(err).Msg("could not initialize WMI service locator")
 	}

@@ -6,15 +6,20 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/rs/zerolog/log"
 	"github.com/yiffyi/autope/native"
 	"github.com/yiffyi/autope/tui"
 	"github.com/yiffyi/autope/wmi"
+	"golang.org/x/sys/windows"
+	"golang.org/x/sys/windows/registry"
 )
 
 type PlaybookPEStage struct {
+	PickupNetCfg    bool `comment:"提取网络配置"`
 	WaitNetwork     bool `comment:"等待网络"`
 	DisableFirewall bool `comment:"关防火墙"`
 
@@ -95,6 +100,149 @@ func formatVolumeWithWMI(svc *wmi.SWbemServices, chk func(string, *wmi.SWbemObje
 		log.Info().Str("DriveLetter", driveLetter).Str("FileSystem", fs).Str("Label", label).Str("ReturnValue", ret.String()).Msg("formatted")
 	}
 	return errors.New("could not found drive letter")
+}
+
+func searchOfflineWindows(svc *wmi.SWbemServices) (driveLetter string, err error) {
+	querySet, err := svc.InstancesOf("Win32_Volume")
+	if err != nil {
+		return "", err
+	}
+
+	volumes, err := querySet.ToSlice()
+	if err != nil {
+		return "", err
+	}
+	log.Info().Int("count", len(volumes)).Msg("found volumes")
+
+	systemDrive := os.Getenv("SystemDrive")
+	if len(systemDrive) == 0 {
+		systemDrive = os.Getenv("SystemRoot")[:2]
+	}
+
+	for _, v := range volumes {
+		text, err := v.GetObjectText()
+		if err == nil {
+			log.Debug().Str("obj", text).Msg("looking at volume")
+		}
+		driveLetter = v.PropertyMustGetValue("DriveLetter").(string)
+
+		if driveLetter == systemDrive {
+			continue
+		}
+
+		stat, err := os.Stat(filepath.Join(driveLetter, `Windows\System32\config`))
+		if err != nil || !stat.IsDir() {
+			continue
+		}
+
+		return driveLetter, nil
+	}
+
+	return "", errors.New("no valid offline Windows")
+}
+
+func PickupNetCfg(offlineDriveLetter string) (err error) {
+
+	var hToken windows.Token
+	err = windows.OpenProcessToken(windows.CurrentProcess(), windows.TOKEN_ADJUST_PRIVILEGES, &hToken)
+	if err != nil {
+		log.Error().Err(err).Msg("OpenProcessToken failed")
+		return err
+	}
+
+	err = native.SetPrivileges(hToken, []string{"SeBackupPrivilege", "SeRestorePrivilege"})
+	if err != nil {
+		log.Error().Err(err).Msg("SetPrivileges failed")
+		return err
+	}
+
+	err = native.RegLoadKey(syscall.HKEY_LOCAL_MACHINE, "OfflineWindows", filepath.Join(offlineDriveLetter, `\Windows\System32\config\SYSTEM`))
+	if err != nil {
+		log.Error().Err(err).Msg("RegLoadKey failed")
+		return err
+	}
+
+	hKey, err := registry.OpenKey(registry.LOCAL_MACHINE, filepath.Join(`OfflineWindows`, `ControlSet001\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}`), registry.QUERY_VALUE)
+	if err != nil {
+		log.Error().Err(err).Msg("registry.OpenKey")
+		return err
+	}
+
+	subKeyNames, err := hKey.ReadSubKeyNames(256)
+	if err != nil {
+		return err
+	}
+
+	for _, keyName := range subKeyNames {
+		k, err := registry.OpenKey(hKey, keyName, registry.QUERY_VALUE)
+		if err != nil {
+			log.Error().Err(err).Str("keyName", keyName).Msg("failed to open key under Control\\Class")
+			continue
+			// return err
+		}
+
+		devId, _, err := k.GetStringValue("DeviceInstanceID")
+		if err != nil {
+			continue
+		}
+
+		if strings.HasPrefix(devId, "SWD") {
+			log.Debug().Str("DeviceInstanceID", devId).Msg("skipped SWD adapter")
+			continue
+		}
+
+		netCfgId, _, err := k.GetStringValue("NetCfgInstanceId")
+		if err != nil {
+			continue
+		}
+
+		kTcpip, err := registry.OpenKey(registry.LOCAL_MACHINE, filepath.Join(`OfflineWindows`, `ControlSet001\Services\Tcpip\Parameters\Interfaces\`, netCfgId), registry.QUERY_VALUE)
+		if err != nil {
+			log.Error().Err(err).Str("NetCfgInstanceId", netCfgId).Msg("failed to open key under Tcpip\\Parameters\\Interfaces")
+			continue
+		}
+
+		enableDHCP, _, err := kTcpip.GetIntegerValue("EnableDHCP")
+		if err != nil {
+			enableDHCP = 0
+		}
+
+		ipAddrs, _, err := kTcpip.GetStringsValue("IPAddress")
+		if err != nil {
+			ipAddrs = nil
+		}
+
+		subnetMasks, _, err := kTcpip.GetStringsValue("SubnetMask")
+		if err != nil {
+			subnetMasks = nil
+		}
+
+		defGateway, _, err := kTcpip.GetStringsValue("DefaultGateway")
+		if err != nil {
+			defGateway = nil
+		}
+
+		strDNSServers, _, err := kTcpip.GetStringValue("NameServer")
+		dnsServers := strings.Split(strDNSServers, ",")
+		if err != nil {
+			// strDNSServers =
+			dnsServers = nil
+		}
+		log.Info().
+			Bool("EnableDHCP", enableDHCP > 0).
+			Strs("IPAddress", ipAddrs).
+			Strs("SubnetMask", subnetMasks).
+			Strs("DefaultGateway", defGateway).
+			Strs("NameServer", dnsServers).
+			Str("DeviceInstanceID", devId).
+			Str("NetCfgInstanceId", netCfgId).
+			Msg("pickup netCfg")
+		// RegWrite($sPath, "IPAddress", "REG_MULTI_SZ", _ArrayToString($aIPAddr, @LF))
+		// RegWrite($sPath, "SubnetMask", "REG_MULTI_SZ", _ArrayToString($aSubnet, @LF))
+		// RegWrite($sPath, "DefaultGateway", "REG_MULTI_SZ", _ArrayToString($aDefGateway, @LF))
+		// RegWrite($sPath, "NameServer", "REG_SZ", _ArrayToString($aDNS, ','))
+	}
+	return nil
 }
 
 func (p *PlaybookPEStage) Run() (err error) {
@@ -243,7 +391,11 @@ func (p *PlaybookPEStage) Run() (err error) {
 
 	if p.FixBootMgr {
 		winDir := filepath.Join(p.SystemVolume, `\Windows`)
-		cmd = exec.Command("bcdboot", winDir, "/s", p.BootVolume)
+		if len(p.BootVolume) > 0 {
+			cmd = exec.Command("bcdboot", winDir, "/s", p.BootVolume)
+		} else {
+			cmd = exec.Command("bcdboot", winDir)
+		}
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		err = cmd.Run()

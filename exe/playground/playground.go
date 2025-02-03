@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/pelletier/go-toml/v2"
@@ -69,4 +70,8 @@ func main() {
 	// tryRichOutput()
 	// trySpinner()
 	tryWMI()
+
+	fmt.Println(filepath.Join("C:", "\\Windows"))
+
+	fmt.Println(autope.PickupNetCfg("C:"))
 }

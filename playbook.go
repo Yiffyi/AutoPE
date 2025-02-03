@@ -1,15 +1,18 @@
 package autope
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/go-ole/go-ole"
 	"github.com/rs/zerolog/log"
 	"github.com/yiffyi/autope/native"
 	"github.com/yiffyi/autope/tui"
+	"github.com/yiffyi/autope/wmi"
 )
 
 type PlaybookPEStage struct {
@@ -21,11 +24,12 @@ type PlaybookPEStage struct {
 	SystemVolume   string `comment:"系统分区"`
 	DataVolume     string `comment:"数据分区"`
 
+	FormatSystem bool `comment:"格式化系统分区"`
+	FormatData   bool `comment:"格式化数据分区"`
+	FormatBoot   bool `comment:"格式化启动分区"`
+
 	FixMBR     bool `comment:"修复MBR"`
 	FixBootMgr bool `comment:"修复引导"`
-	// FormatSystem bool `comment:"格式化系统分区"`
-	// FormatData   bool `comment:"格式化数据分区"`
-	// FormatBoot   bool `comment:"格式化启动分区"`
 
 	ImagePath  string `comment:"镜像路径"`
 	ImageIndex int    `comment:"镜像编号"`
@@ -33,6 +37,90 @@ type PlaybookPEStage struct {
 
 type Playbook struct {
 	PEStage PlaybookPEStage `comment:"PE阶段"`
+}
+
+func (p *PlaybookPEStage) formatVolumeWithWMI(svc *wmi.SWbemServices) (err error) {
+	querySet, err := svc.InstancesOf("Win32_Volume")
+	if err != nil {
+		return err
+	}
+	defer querySet.Close()
+
+	volumes, err := querySet.ToSlice()
+	if err != nil {
+		return err
+	}
+	log.Info().Int("count", len(volumes)).Msg("found volumes")
+
+	for _, v := range volumes {
+		defer v.Close()
+
+		text, err := v.GetObjectText()
+		if err == nil {
+			log.Debug().Str("obj", text).Msg("looking at volume")
+		}
+		driveLetter := v.PropertyMustGetValue("DriveLetter").(string)
+
+		var fs, label string
+
+		/*
+			in WMI, Win32_Volume,
+			BootVolume means the volume contains Windows
+			SystemVolume means the volume contains bootloader
+		*/
+		if p.FormatBoot && driveLetter == filepath.VolumeName(p.BootVolume) {
+			fs = "FAT32"
+			label = "BOOT"
+
+			if !v.PropertyMustGetValue("SystemVolume").(bool) {
+				log.Warn().Str("driveLetter", driveLetter).Msg("is not considered as a boot volume by WMI")
+			}
+		} else if p.FormatSystem && driveLetter == filepath.VolumeName(p.SystemVolume) {
+			fs = "NTFS"
+			label = "SYSTEM"
+
+			if !v.PropertyMustGetValue("BootVolume").(bool) {
+				log.Warn().Str("driveLetter", driveLetter).Msg("is not considered as a system volume by WMI")
+			}
+		} else if p.FormatData && driveLetter == filepath.VolumeName(p.DataVolume) {
+			fs = "NTFS"
+			label = "DATA"
+		} else {
+			continue
+		}
+
+		// ret, err := v.ExecMethod("Format", fs, bool(true), uint32(0), label, bool(false))
+		inParam, err := wmi.GetMethodInParam(v, "Format")
+		if err != nil {
+			return err
+		}
+		defer inParam.Close()
+
+		err = inParam.PropertyPutValue("FileSystem", fs)
+		if err != nil {
+			return err
+		}
+
+		err = inParam.PropertyPutValue("Label", label)
+		if err != nil {
+			return err
+		}
+
+		err = inParam.PropertyPutValue("QuickFormat", true)
+		if err != nil {
+			return err
+		}
+
+		log.Debug().Str("inParam", inParam.String()).Msg("inParam")
+
+		ret, err := v.ExecMethod_("Format", inParam)
+		if err != nil {
+			log.Error().Err(err).Str("DriveLetter", driveLetter).Msg("failed when formatting")
+			return err
+		}
+		log.Info().Str("DriveLetter", driveLetter).Str("FileSystem", fs).Str("Label", label).Str("ReturnValue", ret.String()).Msg("formatted")
+	}
+	return errors.New("could not found drive letter")
 }
 
 func (p *PlaybookPEStage) Run() (err error) {
@@ -79,6 +167,23 @@ func (p *PlaybookPEStage) Run() (err error) {
 		}
 	}
 
+	wmi.CoInitialize()
+	defer ole.CoUninitialize()
+
+	locator, err := wmi.NewSWbemLocator()
+	if err == nil {
+		svc, err := locator.ConnectServerDefault()
+		if err == nil {
+			p.formatVolumeWithWMI(svc)
+			svc.Close()
+		} else {
+			log.Error().Err(err).Msg("could not connect to WMI service")
+		}
+		locator.Close()
+	} else {
+		log.Error().Err(err).Msg("could not initialize WMI service locator")
+	}
+
 	if len(p.ImagePath) > 0 {
 		log.Info().
 			Str("imagePath", p.ImagePath).
@@ -122,7 +227,7 @@ func (p *PlaybookPEStage) Run() (err error) {
 
 	if p.FixBootMgr {
 		winDir := filepath.Join(p.SystemVolume, `\Windows`)
-		cmd = exec.Command("bcdboot", winDir, "/s", p.BootVolume)
+		cmd = exec.Command("bcdboot", winDir, "/s", p.BootVolume, "/v")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		err = cmd.Run()

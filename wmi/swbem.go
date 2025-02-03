@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -101,7 +102,12 @@ func newSWbemProperty(i *ole.IDispatch) (*SWbemProperty, error) {
 }
 
 func (s *SWbemProperty) Close() {
-	s.i.Release()
+	log.Debug().Str("s", fmt.Sprint(s)).Msg("Closing SWbemProperty")
+	if s.i != nil {
+		s.i.Release()
+		s.i = nil
+	}
+	// s.i.Release()
 	// comshim.Done()
 }
 
@@ -119,7 +125,7 @@ func (s *SWbemProperty) ValueGet() (interface{}, error) {
 	return value, nil
 }
 
-func (s *SWbemProperty) ValueSet(v interface{}) error {
+func (s *SWbemProperty) ValuePut(v interface{}) error {
 	s.m.Lock()
 	defer s.m.Unlock()
 
@@ -142,26 +148,44 @@ func newSWbemObject(i *ole.IDispatch) *SWbemObject {
 }
 
 func (s *SWbemObject) Close() {
-	s.i.Release()
+	if s.i != nil {
+		s.i.Release()
+		s.i = nil
+	}
 	// comshim.Done()
 }
 
-func (s *SWbemObject) ExecMethod(methodName string, inParam *SWbemObject) (*SWbemObject, error) {
+func (s *SWbemObject) ExecMethod_(methodName string, inParam *SWbemObject) (*SWbemObject, error) {
 	s.m.Lock()
 	defer s.m.Unlock()
 
 	var objRaw *ole.VARIANT
 	var err error
 	if inParam != nil {
-		objRaw, err = s.i.CallMethod("ExecMethod", methodName, inParam.i)
+		objRaw, err = s.i.CallMethod("ExecMethod_", methodName, inParam.i)
 	} else {
-		objRaw, err = s.i.CallMethod("ExecMethod", methodName)
+		objRaw, err = s.i.CallMethod("ExecMethod_", methodName)
 	}
 
 	if err != nil {
 		return nil, err
 	}
 	return newSWbemObject(objRaw.ToIDispatch()), nil
+}
+
+func (s *SWbemObject) CallMethod(methodName string, args ...interface{}) (uint32, error) {
+	s.m.Lock()
+	defer s.m.Unlock()
+
+	var objRaw *ole.VARIANT
+	var err error
+	objRaw, err = s.i.CallMethod(methodName, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	resultInt := objRaw.Value().(uint32)
+	return resultInt, nil
 }
 
 func (s *SWbemObject) PropertyGet(propertyName string) (*SWbemProperty, error) {
@@ -197,6 +221,20 @@ func (s *SWbemObject) PropertyMustGetValue(propertyName string) interface{} {
 	return v
 }
 
+func (s *SWbemObject) PropertyPutValue(propertyName string, value interface{}) error {
+	prop, err := s.PropertyGet(propertyName)
+	if err != nil {
+		return err
+	}
+	defer prop.Close()
+
+	err = prop.ValuePut(value)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SWbemObject) GetObjectText() (string, error) {
 	s.m.Lock()
 	defer s.m.Unlock()
@@ -213,7 +251,7 @@ func (s *SWbemObject) GetObjectText() (string, error) {
 func (s *SWbemObject) String() string {
 	objText, err := s.GetObjectText()
 	if err != nil {
-		return "err: " + err.Error()
+		return fmt.Sprintf("{ERROR:%s}", err.Error())
 	} else {
 		return objText
 	}
@@ -232,7 +270,10 @@ func newSWbemObjectSet(i *ole.IDispatch) *SWbemObjectSet {
 }
 
 func (s *SWbemObjectSet) Close() {
-	s.i.Release()
+	if s.i != nil {
+		s.i.Release()
+		s.i = nil
+	}
 	// comshim.Done()
 }
 
@@ -288,7 +329,10 @@ func newSWbemServices(i *ole.IDispatch) *SWbemServices {
 }
 
 func (s *SWbemServices) Close() {
-	s.i.Release()
+	if s.i != nil {
+		s.i.Release()
+		s.i = nil
+	}
 	// comshim.Done()
 }
 
@@ -297,6 +341,20 @@ func (s *SWbemServices) ExecQuery(query string) (*SWbemObjectSet, error) {
 	defer s.m.Unlock()
 
 	objSetRaw, err := s.i.CallMethod("ExecQuery", query)
+	if err != nil {
+		return nil, err
+	}
+	// defer objSetRaw.Clear()
+
+	objSet := objSetRaw.ToIDispatch()
+	return newSWbemObjectSet(objSet), nil
+}
+
+func (s *SWbemServices) InstancesOf(class string) (*SWbemObjectSet, error) {
+	s.m.Lock()
+	defer s.m.Unlock()
+
+	objSetRaw, err := s.i.CallMethod("InstancesOf", class)
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +422,10 @@ func NewSWbemLocator() (*SWbemLocator, error) {
 }
 
 func (s *SWbemLocator) Close() {
-	s.i.Release()
+	if s.i != nil {
+		s.i.Release()
+		s.i = nil
+	}
 	// comshim.Done()
 }
 

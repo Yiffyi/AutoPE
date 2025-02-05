@@ -175,7 +175,12 @@ func PickupNetCfg(offlineDriveLetter string) (err error) {
 		return err
 	}
 
+	var digitCheck = regexp.MustCompile(`^[0-9]{4}$`)
 	for _, keyName := range subKeyNames {
+		if !digitCheck.MatchString(keyName) {
+			continue
+		}
+
 		k, err := registry.OpenKey(hKey, keyName, registry.QUERY_VALUE)
 		if err != nil {
 			log.Error().Err(err).Str("keyName", keyName).Msg("failed to open key under Control\\Class")
@@ -191,6 +196,11 @@ func PickupNetCfg(offlineDriveLetter string) (err error) {
 
 		if strings.HasPrefix(devId, "SWD") {
 			log.Debug().Str("DeviceInstanceID", devId).Msg("skipped SWD adapter")
+			continue
+		}
+
+		if strings.HasPrefix(devId, "BTH") {
+			log.Debug().Str("DeviceInstanceID", devId).Msg("skipped Bluetooth adapter")
 			continue
 		}
 

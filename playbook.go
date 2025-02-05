@@ -208,32 +208,75 @@ func PickupNetCfg(offlineDriveLetter string) (err error) {
 			enableDHCP = 0
 		}
 
-		ipAddrs, _, err := kTcpip.GetStringsValue("IPAddress")
-		if err != nil {
-			ipAddrs = nil
+		var dnsServers, ipAddrs, subnetMasks, defGateways []string
+
+		if enableDHCP > 0 {
+			strIPAddrs, _, err := kTcpip.GetStringValue("DhcpIPAddress")
+			if err != nil {
+				ipAddrs = nil
+			} else {
+				ipAddrs = []string{strIPAddrs}
+			}
+
+			strSubnetMasks, _, err := kTcpip.GetStringValue("DhcpSubnetMask")
+			if err != nil {
+				subnetMasks = nil
+			} else {
+				subnetMasks = []string{strSubnetMasks}
+			}
+
+			defGateways, _, err = kTcpip.GetStringsValue("DhcpDefaultGateway")
+			if err != nil {
+				defGateways = nil
+			}
+
+			strDNSServers, _, err := kTcpip.GetStringValue("DhcpNameServer")
+			if err != nil {
+				// strDNSServers =
+				dnsServers = nil
+			} else {
+				if len(strDNSServers) > 0 { // avoid []string{""}
+					dnsServers = strings.Split(strDNSServers, " ")
+				} else {
+					dnsServers = []string{}
+				}
+			}
+
+		} else {
+			ipAddrs, _, err = kTcpip.GetStringsValue("IPAddress")
+			if err != nil {
+				ipAddrs = nil
+			}
+
+			subnetMasks, _, err = kTcpip.GetStringsValue("SubnetMask")
+			if err != nil {
+				subnetMasks = nil
+			}
+
+			defGateways, _, err = kTcpip.GetStringsValue("DefaultGateway")
+			if err != nil {
+				defGateways = nil
+			}
+
+			strDNSServers, _, err := kTcpip.GetStringValue("NameServer")
+			if err != nil {
+				// strDNSServers =
+				dnsServers = nil
+			} else {
+				if len(strDNSServers) > 0 { // avoid []string{""}
+					dnsServers = strings.Split(strDNSServers, ",")
+				} else {
+					dnsServers = []string{}
+				}
+			}
+
 		}
 
-		subnetMasks, _, err := kTcpip.GetStringsValue("SubnetMask")
-		if err != nil {
-			subnetMasks = nil
-		}
-
-		defGateway, _, err := kTcpip.GetStringsValue("DefaultGateway")
-		if err != nil {
-			defGateway = nil
-		}
-
-		strDNSServers, _, err := kTcpip.GetStringValue("NameServer")
-		dnsServers := strings.Split(strDNSServers, ",")
-		if err != nil {
-			// strDNSServers =
-			dnsServers = nil
-		}
 		log.Info().
 			Bool("EnableDHCP", enableDHCP > 0).
 			Strs("IPAddress", ipAddrs).
 			Strs("SubnetMask", subnetMasks).
-			Strs("DefaultGateway", defGateway).
+			Strs("DefaultGateway", defGateways).
 			Strs("NameServer", dnsServers).
 			Str("DeviceInstanceID", devId).
 			Str("NetCfgInstanceId", netCfgId).

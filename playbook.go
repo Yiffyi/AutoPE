@@ -6,8 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
-	"strings"
 	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,7 +14,6 @@ import (
 	"github.com/yiffyi/autope/tui"
 	"github.com/yiffyi/autope/wmi"
 	"golang.org/x/sys/windows"
-	"golang.org/x/sys/windows/registry"
 )
 
 type PlaybookPEStage struct {
@@ -164,147 +161,6 @@ func LoadHive(hivePath, subKeyName string) (err error) {
 		return err
 	}
 
-	return nil
-}
-
-func PickupNetCfg(controlSetPath string) (err error) {
-	hKey, err := registry.OpenKey(registry.LOCAL_MACHINE, filepath.Join(controlSetPath, `Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}`), registry.QUERY_VALUE|registry.ENUMERATE_SUB_KEYS)
-	if err != nil {
-		log.Error().Err(err).Msg("registry.OpenKey")
-		return err
-	}
-	defer hKey.Close()
-
-	subKeyNames, err := hKey.ReadSubKeyNames(0)
-	if err != nil {
-		log.Error().Err(err).Msg("hKey.ReadSubKeyNames")
-		return err
-	}
-
-	var digitCheck = regexp.MustCompile(`^[0-9]{4}$`)
-	for _, keyName := range subKeyNames {
-		if !digitCheck.MatchString(keyName) {
-			continue
-		}
-
-		k, err := registry.OpenKey(hKey, keyName, registry.QUERY_VALUE)
-		if err != nil {
-			log.Error().Err(err).Str("keyName", keyName).Msg("failed to open key under Control\\Class")
-			continue
-			// return err
-		}
-		defer k.Close()
-
-		devId, _, err := k.GetStringValue("DeviceInstanceID")
-		if err != nil {
-			continue
-		}
-
-		if strings.HasPrefix(devId, "SWD") {
-			log.Debug().Str("DeviceInstanceID", devId).Msg("skipped SWD adapter")
-			continue
-		}
-
-		if strings.HasPrefix(devId, "BTH") {
-			log.Debug().Str("DeviceInstanceID", devId).Msg("skipped Bluetooth adapter")
-			continue
-		}
-
-		netCfgId, _, err := k.GetStringValue("NetCfgInstanceId")
-		if err != nil {
-			continue
-		}
-
-		kTcpip, err := registry.OpenKey(registry.LOCAL_MACHINE, filepath.Join(controlSetPath, `Services\Tcpip\Parameters\Interfaces\`, netCfgId), registry.QUERY_VALUE)
-		if err != nil {
-			log.Error().Err(err).Str("NetCfgInstanceId", netCfgId).Msg("failed to open key under Tcpip\\Parameters\\Interfaces")
-			continue
-		}
-		defer kTcpip.Close()
-
-		enableDHCP, _, err := kTcpip.GetIntegerValue("EnableDHCP")
-		if err != nil {
-			enableDHCP = 0
-		}
-
-		var dnsServers, ipAddrs, subnetMasks, defGateways []string
-
-		if enableDHCP > 0 {
-			strIPAddrs, _, err := kTcpip.GetStringValue("DhcpIPAddress")
-			if err != nil {
-				ipAddrs = nil
-			} else {
-				ipAddrs = []string{strIPAddrs}
-			}
-
-			strSubnetMasks, _, err := kTcpip.GetStringValue("DhcpSubnetMask")
-			if err != nil {
-				subnetMasks = nil
-			} else {
-				subnetMasks = []string{strSubnetMasks}
-			}
-
-			defGateways, _, err = kTcpip.GetStringsValue("DhcpDefaultGateway")
-			if err != nil {
-				defGateways = nil
-			}
-
-			strDNSServers, _, err := kTcpip.GetStringValue("DhcpNameServer")
-			if err != nil {
-				// strDNSServers =
-				dnsServers = nil
-			} else {
-				if len(strDNSServers) > 0 { // avoid []string{""}
-					dnsServers = strings.Split(strDNSServers, " ")
-				} else {
-					dnsServers = []string{}
-				}
-			}
-
-		} else {
-			ipAddrs, _, err = kTcpip.GetStringsValue("IPAddress")
-			if err != nil {
-				ipAddrs = nil
-			}
-
-			subnetMasks, _, err = kTcpip.GetStringsValue("SubnetMask")
-			if err != nil {
-				subnetMasks = nil
-			}
-
-			defGateways, _, err = kTcpip.GetStringsValue("DefaultGateway")
-			if err != nil {
-				defGateways = nil
-			}
-
-			strDNSServers, _, err := kTcpip.GetStringValue("NameServer")
-			if err != nil {
-				// strDNSServers =
-				dnsServers = nil
-			} else {
-				if len(strDNSServers) > 0 { // avoid []string{""}
-					dnsServers = strings.Split(strDNSServers, ",")
-				} else {
-					dnsServers = []string{}
-				}
-			}
-
-		}
-
-		log.Info().
-			Bool("EnableDHCP", enableDHCP > 0).
-			Strs("IPAddress", ipAddrs).
-			Strs("SubnetMask", subnetMasks).
-			Strs("DefaultGateway", defGateways).
-			Strs("NameServer", dnsServers).
-			Str("DeviceInstanceID", devId).
-			Str("NetCfgInstanceId", netCfgId).
-			Msg("pickup netCfg")
-		// RegWrite($sPath, "IPAddress", "REG_MULTI_SZ", _ArrayToString($aIPAddr, @LF))
-		// RegWrite($sPath, "SubnetMask", "REG_MULTI_SZ", _ArrayToString($aSubnet, @LF))
-		// RegWrite($sPath, "DefaultGateway", "REG_MULTI_SZ", _ArrayToString($aDefGateway, @LF))
-		// RegWrite($sPath, "NameServer", "REG_SZ", _ArrayToString($aDNS, ','))
-	}
 	return nil
 }
 

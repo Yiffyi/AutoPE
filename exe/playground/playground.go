@@ -80,6 +80,7 @@ func main() {
 
 	fmt.Println(filepath.Join("C:", "\\Windows"))
 
-	// fmt.Println(autope.LoadHive(`C:\Windows\System32\config\SYSTEM`, "OfflineWindows"))
-	fmt.Println(autope.GetNetworkConfigFromRegistry(`SYSTEM\ControlSet001`))
+	fmt.Println(autope.LoadHive(`C:\Windows\System32\config\SYSTEM`, "OfflineWindows"))
+	// fmt.Println(autope.GetNetworkConfigFromRegistry(`SYSTEM\ControlSet001`))
+	fmt.Println(autope.GetNetworkConfigFromRegistry(`OfflineWindows\ControlSet001`))
 }

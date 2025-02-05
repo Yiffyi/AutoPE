@@ -24,18 +24,18 @@ func (nc *NetworkConfig) _fillWithInterfaceKeyDhcp(hInterfaceKey registry.Key) {
 	var err error
 	var dnsServers, ipAddrs, subnetMasks, defGateways []string
 
-	strIPAddrs, _, err := hInterfaceKey.GetStringValue("DhcpIPAddress")
+	strIPAddr, _, err := hInterfaceKey.GetStringValue("DhcpIPAddress")
 	if err != nil {
 		ipAddrs = nil
 	} else {
-		ipAddrs = []string{strIPAddrs}
+		ipAddrs = []string{strIPAddr}
 	}
 
-	strSubnetMasks, _, err := hInterfaceKey.GetStringValue("DhcpSubnetMask")
+	strSubnetMask, _, err := hInterfaceKey.GetStringValue("DhcpSubnetMask")
 	if err != nil {
 		subnetMasks = nil
 	} else {
-		subnetMasks = []string{strSubnetMasks}
+		subnetMasks = []string{strSubnetMask}
 	}
 
 	defGateways, _, err = hInterfaceKey.GetStringsValue("DhcpDefaultGateway")

@@ -57,7 +57,7 @@ var (
 func regLoadKey(hKey syscall.Handle, lpSubKey *uint16, lpFile *uint16) (lstatus uint32, err error) {
 	r0, _, e1 := syscall.Syscall(procRegLoadKeyW.Addr(), 3, uintptr(hKey), uintptr(unsafe.Pointer(lpSubKey)), uintptr(unsafe.Pointer(lpFile)))
 	lstatus = uint32(r0)
-	if lstatus == 0 {
+	if lstatus != windows.NO_ERROR {
 		err = errnoErr(e1)
 	}
 	return

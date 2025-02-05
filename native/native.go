@@ -23,7 +23,7 @@ import (
 //sys WIMGetAttributesR(hImage syscall.Handle, pWimInfo *WimInfo, cbWimInfo uint32) (err error) = wimgapi.WIMGetAttributes
 //sys WIMApplyImage(hImage syscall.Handle, pszPath *uint16, dwApplyFlags uint32) (err error) = wimgapi.WIMApplyImage
 
-//sys regLoadKey(hKey syscall.Handle, lpSubKey *uint16, lpFile *uint16) (lstatus uint32, err error) = Advapi32.RegLoadKeyW
+//sys regLoadKey(hKey syscall.Handle, lpSubKey *uint16, lpFile *uint16) (lstatus uint32, err error) [failretval!=windows.NO_ERROR] = Advapi32.RegLoadKeyW
 
 // utf16PtrToString is like UTF16ToString, but takes *uint16
 // as a parameter instead of []uint16.

@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/pelletier/go-toml/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/yiffyi/autope"
 	"github.com/yiffyi/autope/wmi"
@@ -71,14 +70,16 @@ func tryWMI() error {
 
 func main() {
 
-	t, err := toml.Marshal(autope.Playbook{})
-	fmt.Println(string(t), err)
+	autope.SetupDefaultLogger()
+	// t, err := toml.Marshal(autope.Playbook{})
+	// fmt.Println(string(t), err)
 
 	// tryRichOutput()
 	// trySpinner()
-	tryWMI()
+	// tryWMI()
 
 	fmt.Println(filepath.Join("C:", "\\Windows"))
 
-	fmt.Println(autope.PickupNetCfg("C:"))
+	// fmt.Println(autope.LoadHive(`C:\Windows\System32\config\SYSTEM`, "OfflineWindows"))
+	fmt.Println(autope.PickupNetCfg(`SYSTEM\ControlSet001`))
 }

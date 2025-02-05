@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -141,7 +142,7 @@ func SearchOfflineWindows(svc *wmi.SWbemServices) (driveLetter string, err error
 	return "", errors.New("no valid offline Windows")
 }
 
-func PickupNetCfg(offlineDriveLetter string) (err error) {
+func LoadHive(hivePath, subKeyName string) (err error) {
 
 	var hToken windows.Token
 	err = windows.OpenProcessToken(windows.CurrentProcess(), windows.TOKEN_ADJUST_PRIVILEGES, &hToken)
@@ -156,13 +157,18 @@ func PickupNetCfg(offlineDriveLetter string) (err error) {
 		return err
 	}
 
-	err = native.RegLoadKey(syscall.HKEY_LOCAL_MACHINE, "OfflineWindows", filepath.Join(offlineDriveLetter, `\Windows\System32\config\SYSTEM`))
+	// err = native.RegLoadKey(syscall.HKEY_LOCAL_MACHINE, "OfflineWindows", filepath.Join(offlineDriveLetter, `\Windows\System32\config\SYSTEM`))
+	err = native.RegLoadKey(syscall.HKEY_LOCAL_MACHINE, subKeyName, hivePath)
 	if err != nil {
 		log.Error().Err(err).Msg("RegLoadKey failed")
 		return err
 	}
 
-	hKey, err := registry.OpenKey(registry.LOCAL_MACHINE, filepath.Join(`OfflineWindows`, `ControlSet001\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}`), registry.QUERY_VALUE)
+	return nil
+}
+
+func PickupNetCfg(controlSetPath string) (err error) {
+	hKey, err := registry.OpenKey(registry.LOCAL_MACHINE, filepath.Join(controlSetPath, `Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}`), registry.QUERY_VALUE|registry.ENUMERATE_SUB_KEYS)
 	if err != nil {
 		log.Error().Err(err).Msg("registry.OpenKey")
 		return err
@@ -209,7 +215,7 @@ func PickupNetCfg(offlineDriveLetter string) (err error) {
 			continue
 		}
 
-		kTcpip, err := registry.OpenKey(registry.LOCAL_MACHINE, filepath.Join(`OfflineWindows`, `ControlSet001\Services\Tcpip\Parameters\Interfaces\`, netCfgId), registry.QUERY_VALUE)
+		kTcpip, err := registry.OpenKey(registry.LOCAL_MACHINE, filepath.Join(controlSetPath, `Services\Tcpip\Parameters\Interfaces\`, netCfgId), registry.QUERY_VALUE)
 		if err != nil {
 			log.Error().Err(err).Str("NetCfgInstanceId", netCfgId).Msg("failed to open key under Tcpip\\Parameters\\Interfaces")
 			continue

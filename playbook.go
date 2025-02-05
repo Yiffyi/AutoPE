@@ -167,8 +167,9 @@ func PickupNetCfg(offlineDriveLetter string) (err error) {
 		log.Error().Err(err).Msg("registry.OpenKey")
 		return err
 	}
+	defer hKey.Close()
 
-	subKeyNames, err := hKey.ReadSubKeyNames(256)
+	subKeyNames, err := hKey.ReadSubKeyNames(0)
 	if err != nil {
 		log.Error().Err(err).Msg("hKey.ReadSubKeyNames")
 		return err
@@ -181,6 +182,7 @@ func PickupNetCfg(offlineDriveLetter string) (err error) {
 			continue
 			// return err
 		}
+		defer k.Close()
 
 		devId, _, err := k.GetStringValue("DeviceInstanceID")
 		if err != nil {
@@ -202,6 +204,7 @@ func PickupNetCfg(offlineDriveLetter string) (err error) {
 			log.Error().Err(err).Str("NetCfgInstanceId", netCfgId).Msg("failed to open key under Tcpip\\Parameters\\Interfaces")
 			continue
 		}
+		defer kTcpip.Close()
 
 		enableDHCP, _, err := kTcpip.GetIntegerValue("EnableDHCP")
 		if err != nil {

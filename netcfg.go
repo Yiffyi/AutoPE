@@ -100,7 +100,7 @@ func (nc *NetworkConfig) _fillWithInterfaceKeyStatic(hInterfaceKey registry.Key)
 	nc.NameServer = dnsServers
 }
 
-func (nc *NetworkConfig) fillWithInterfaceKey(hInterfaceKey registry.Key) error {
+func (nc *NetworkConfig) fillWithInterfaceKey(hInterfaceKey registry.Key) {
 	enableDHCP, _, err := hInterfaceKey.GetIntegerValue("EnableDHCP")
 	if err != nil {
 		enableDHCP = 0
@@ -111,8 +111,6 @@ func (nc *NetworkConfig) fillWithInterfaceKey(hInterfaceKey registry.Key) error 
 	} else {
 		nc._fillWithInterfaceKeyStatic(hInterfaceKey)
 	}
-
-	return nil
 }
 
 func parseControlClassSubKey(hControlClassKey registry.Key, keyName string) (devId, netCfgId string, err error) {
@@ -194,11 +192,7 @@ func GetNetworkConfigFromRegistry(controlSetPath string) (cfgs []*NetworkConfig,
 		nc := &NetworkConfig{
 			DeviceInstanceID: devId,
 		}
-
-		err = nc.fillWithInterfaceKey(hInterfaceKey)
-		if err != nil {
-			continue
-		}
+		nc.fillWithInterfaceKey(hInterfaceKey)
 
 		log.Info().
 			Interface("nc", nc).

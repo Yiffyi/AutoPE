@@ -102,7 +102,7 @@ func formatVolumeWithWMI(svc *wmi.SWbemServices, chk func(string, *wmi.SWbemObje
 	return errors.New("could not found drive letter")
 }
 
-func searchOfflineWindows(svc *wmi.SWbemServices) (driveLetter string, err error) {
+func SearchOfflineWindows(svc *wmi.SWbemServices) (driveLetter string, err error) {
 	querySet, err := svc.InstancesOf("Win32_Volume")
 	if err != nil {
 		return "", err
@@ -170,6 +170,7 @@ func PickupNetCfg(offlineDriveLetter string) (err error) {
 
 	subKeyNames, err := hKey.ReadSubKeyNames(256)
 	if err != nil {
+		log.Error().Err(err).Msg("hKey.ReadSubKeyNames")
 		return err
 	}
 

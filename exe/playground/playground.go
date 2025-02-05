@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/pelletier/go-toml/v2"
+	"github.com/rs/zerolog/log"
 	"github.com/yiffyi/autope"
 	"github.com/yiffyi/autope/wmi"
 )
@@ -32,24 +33,28 @@ func tryRichOutput() {
 	fmt.Println(style3.Render("I have border"))
 }
 
-func tryWMI() {
+func tryWMI() error {
+
 	wmi.CoInitialize()
+	defer wmi.CoUninitialize()
+
 	locator, err := wmi.NewSWbemLocator()
 	if err != nil {
-		fmt.Println("NewSWbemLocator:", err)
-		return
+		log.Error().Err(err).Msg("could not initialize WMI service locator")
+		return err
+		// return nil, err
 	}
 
-	service, err := locator.ConnectServerDefault()
+	svc, err := locator.ConnectServerDefault()
 	if err != nil {
-		fmt.Println("ConnectServerDefault:", err)
-		return
+		log.Error().Err(err).Msg("could not connect to WMI service")
+		return err
 	}
 
-	volumes, err := service.ExecQuery("SELECT * FROM Win32_Volume")
+	volumes, err := svc.ExecQuery("SELECT * FROM Win32_Volume")
 	if err != nil {
 		fmt.Println("ExecQuery:", err)
-		return
+		return err
 	}
 
 	cnt, err := volumes.Count()
@@ -60,6 +65,8 @@ func tryWMI() {
 
 	v := s[0]
 	fmt.Println("volumes[0].Name", v.PropertyMustGetValue("Name").(string), err)
+	fmt.Println(autope.SearchOfflineWindows(svc))
+	return nil
 }
 
 func main() {

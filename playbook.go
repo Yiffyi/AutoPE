@@ -6,14 +6,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/rs/zerolog/log"
 	"github.com/yiffyi/autope/native"
 	"github.com/yiffyi/autope/tui"
 	"github.com/yiffyi/autope/wmi"
-	"golang.org/x/sys/windows"
 )
 
 type PlaybookPEStage struct {
@@ -137,31 +135,6 @@ func SearchOfflineWindows(svc *wmi.SWbemServices) (driveLetter string, err error
 	}
 
 	return "", errors.New("no valid offline Windows")
-}
-
-func LoadHive(hivePath, subKeyName string) (err error) {
-
-	var hToken windows.Token
-	err = windows.OpenProcessToken(windows.CurrentProcess(), windows.TOKEN_ADJUST_PRIVILEGES, &hToken)
-	if err != nil {
-		log.Error().Err(err).Msg("OpenProcessToken failed")
-		return err
-	}
-
-	err = native.SetPrivileges(hToken, []string{"SeBackupPrivilege", "SeRestorePrivilege"})
-	if err != nil {
-		log.Error().Err(err).Msg("SetPrivileges failed")
-		return err
-	}
-
-	// err = native.RegLoadKey(syscall.HKEY_LOCAL_MACHINE, "OfflineWindows", filepath.Join(offlineDriveLetter, `\Windows\System32\config\SYSTEM`))
-	err = native.RegLoadKey(syscall.HKEY_LOCAL_MACHINE, subKeyName, hivePath)
-	if err != nil {
-		log.Error().Err(err).Msg("RegLoadKey failed")
-		return err
-	}
-
-	return nil
 }
 
 func (p *PlaybookPEStage) Run() (err error) {

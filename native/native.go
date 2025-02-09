@@ -1,13 +1,8 @@
 package native
 
 import (
-	"errors"
-	"syscall"
 	"unicode/utf16"
 	"unsafe"
-
-	"golang.org/x/sys/windows"
-	"golang.org/x/sys/windows/registry"
 )
 
 //sys WIMCreateFile(pszWimPath *uint16, dwDesiredAccess uint32, dwCreationDisposition uint32, dwFlagsAndAttributes uint32, dwCompressionType uint32, pdwCreationResult *uint32) (handle syscall.Handle, err error) = wimgapi.WIMCreateFile
@@ -24,6 +19,7 @@ import (
 //sys WIMApplyImage(hImage syscall.Handle, pszPath *uint16, dwApplyFlags uint32) (err error) = wimgapi.WIMApplyImage
 
 //sys regLoadKey(hKey syscall.Handle, lpSubKey *uint16, lpFile *uint16) (lstatus uint32, err error) [failretval!=windows.NO_ERROR] = Advapi32.RegLoadKeyW
+//sys regUnLoadKey(hKey syscall.Handle, lpSubKey *uint16) (lstatus uint32, err error) [failretval!=windows.NO_ERROR] = Advapi32.RegUnLoadKeyW
 
 // utf16PtrToString is like UTF16ToString, but takes *uint16
 // as a parameter instead of []uint16.
@@ -42,32 +38,4 @@ func UTF16PtrToString(p *uint16) string {
 	s := unsafe.Slice(p, n)
 	// Decode []uint16 into string.
 	return string(utf16.Decode(s))
-}
-
-func RegLoadKey(hKey registry.Key, strSubKey string, strFile string) error {
-	lpSubKey, err := syscall.UTF16PtrFromString(strSubKey)
-	if err != nil {
-		return err
-	}
-
-	lpFile, err := syscall.UTF16PtrFromString(strFile)
-	if err != nil {
-		return err
-	}
-
-	lstatus, err := regLoadKey(syscall.Handle(hKey), lpSubKey, lpFile)
-	if err != nil {
-		return err
-	}
-
-	if lstatus != uint32(windows.ERROR_SUCCESS) {
-		buf := make([]uint16, 256)
-		_, err := windows.FormatMessage(windows.FORMAT_MESSAGE_FROM_SYSTEM, 0, lstatus, 0, buf, nil)
-		if err != nil {
-			return err
-		}
-		return errors.New(syscall.UTF16ToString(buf))
-	}
-
-	return nil
 }

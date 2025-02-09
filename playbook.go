@@ -98,35 +98,24 @@ func formatVolumeWithWMI(svc *wmi.SWbemServices, chk func(string, *wmi.SWbemObje
 	return errors.New("could not found drive letter")
 }
 
-func SearchOfflineWindows(svc *wmi.SWbemServices) (driveLetter string, err error) {
-	querySet, err := svc.InstancesOf("Win32_Volume")
+func SearchOfflineWindows() (driveLetter string, err error) {
+	drives, err := native.GetAllDrives()
 	if err != nil {
 		return "", err
 	}
-
-	volumes, err := querySet.ToSlice()
-	if err != nil {
-		return "", err
-	}
-	log.Info().Int("count", len(volumes)).Msg("found volumes")
 
 	systemDrive := os.Getenv("SystemDrive")
 	if len(systemDrive) == 0 {
 		systemDrive = os.Getenv("SystemRoot")[:2]
 	}
 
-	for _, v := range volumes {
-		text, err := v.GetObjectText()
-		if err == nil {
-			log.Debug().Str("obj", text).Msg("looking at volume")
-		}
-		driveLetter = v.PropertyMustGetValue("DriveLetter").(string)
-
+	for _, v := range drives {
+		driveLetter := filepath.VolumeName(v)
 		if driveLetter == systemDrive {
 			continue
 		}
 
-		stat, err := os.Stat(filepath.Join(driveLetter, `Windows\System32\config`))
+		stat, err := os.Stat(filepath.Join(driveLetter, `\Windows\System32\config`))
 		if err != nil || !stat.IsDir() {
 			continue
 		}

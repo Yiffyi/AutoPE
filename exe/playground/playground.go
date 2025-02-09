@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/rs/zerolog/log"
 	"github.com/yiffyi/autope"
+	"github.com/yiffyi/autope/native"
 	"github.com/yiffyi/autope/wmi"
 )
 
@@ -64,7 +64,6 @@ func tryWMI() error {
 
 	v := s[0]
 	fmt.Println("volumes[0].Name", v.PropertyMustGetValue("Name").(string), err)
-	fmt.Println(autope.SearchOfflineWindows(svc))
 	return nil
 }
 
@@ -78,9 +77,13 @@ func main() {
 	// trySpinner()
 	// tryWMI()
 
-	fmt.Println(filepath.Join("C:", "\\Windows"))
+	// fmt.Println(filepath.Join("C:", "\\Windows"))
+	fmt.Println(native.GetAllDrives())
+	fmt.Println(native.GetAllVolumes())
+	fmt.Println(autope.SearchOfflineWindows())
 
-	fmt.Println(autope.LoadHive(`C:\Windows\System32\config\SYSTEM`, "OfflineWindows"))
+	// fmt.Println(native.LoadHive(`C:\Windows\System32\config\SYSTEM`, "OfflineWindows"))
 	// fmt.Println(autope.GetNetworkConfigFromRegistry(`SYSTEM\ControlSet001`))
-	fmt.Println(autope.GetNetworkConfigFromRegistry(`OfflineWindows\ControlSet001`))
+	// fmt.Println(native.RegUnLoadKey(registry.LOCAL_MACHINE, "OfflineWindows"))
+	// fmt.Println(autope.GetNetworkConfigFromRegistry(`OfflineWindows\ControlSet001`))
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func swbmBaseCloser(p *SWbemBase) {
+func swbemBaseCloser(p *SWbemBase) {
 	p.close()
 }
 
@@ -24,7 +24,7 @@ func (s *SWbemBase) init(i *ole.IDispatch, typeName string) {
 	s.i = i
 	s.typeName = typeName
 
-	runtime.SetFinalizer(s, swbmBaseCloser)
+	runtime.SetFinalizer(s, swbemBaseCloser)
 }
 
 func (s *SWbemBase) close() {
